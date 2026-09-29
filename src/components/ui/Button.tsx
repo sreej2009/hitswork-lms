@@ -1,6 +1,7 @@
-import type { AnchorHTMLAttributes, ButtonHTMLAttributes, ReactNode } from 'react';
+import type { AnchorHTMLAttributes, ButtonHTMLAttributes, ReactNode, Ref } from 'react';
 import { ArrowRight, type LucideIcon } from 'lucide-react';
 import { cn } from '../../lib/cn';
+import { AppLink } from './AppLink';
 
 type Variant = 'primary' | 'secondary' | 'ghost' | 'soft' | 'white';
 type Size = 'sm' | 'md' | 'lg';
@@ -12,19 +13,21 @@ interface BaseProps {
   /** Adds a trailing arrow that nudges forward on hover */
   arrow?: boolean;
   fullWidth?: boolean;
+  /** `pill` for fully rounded ends (e.g. navbar Sign Up) */
+  shape?: 'rounded' | 'pill';
   className?: string;
   children: ReactNode;
 }
 
 type AnchorProps = BaseProps & { href: string } & Omit<AnchorHTMLAttributes<HTMLAnchorElement>, keyof BaseProps>;
-type NativeButtonProps = BaseProps & { href?: undefined } & Omit<
+type NativeButtonProps = BaseProps & { href?: undefined; ref?: Ref<HTMLButtonElement> } & Omit<
     ButtonHTMLAttributes<HTMLButtonElement>,
     keyof BaseProps
   >;
 export type ButtonProps = AnchorProps | NativeButtonProps;
 
 const base =
-  'group/btn inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-xl font-semibold ' +
+  'group/btn inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap font-semibold ' +
   'transition-[transform,background-color,border-color,color,box-shadow,filter] duration-200 ease-out-soft ' +
   'disabled:pointer-events-none disabled:opacity-50';
 
@@ -44,8 +47,16 @@ const variants: Record<Variant, string> = {
 };
 
 export function Button(props: ButtonProps) {
-  const { variant = 'primary', size = 'md', icon: Icon, arrow, fullWidth, className, children, ...rest } = props;
-  const classes = cn(base, sizes[size], variants[variant], fullWidth && 'w-full', className);
+  const { variant = 'primary', size = 'md', icon: Icon, arrow, fullWidth, shape = 'rounded', className, children, ...rest } =
+    props;
+  const classes = cn(
+    base,
+    shape === 'pill' ? 'rounded-full' : 'rounded-xl',
+    sizes[size],
+    variants[variant],
+    fullWidth && 'w-full',
+    className,
+  );
   const content = (
     <>
       {Icon && <Icon aria-hidden className="size-[18px]" strokeWidth={2} />}
@@ -62,9 +73,9 @@ export function Button(props: ButtonProps) {
 
   if (props.href !== undefined) {
     return (
-      <a className={classes} {...(rest as AnchorHTMLAttributes<HTMLAnchorElement>)}>
+      <AppLink className={classes} {...(rest as AnchorHTMLAttributes<HTMLAnchorElement> & { href: string })}>
         {content}
-      </a>
+      </AppLink>
     );
   }
 

@@ -4,6 +4,7 @@ import { footerColumns, legalLinks } from '../../data/navigation';
 import type { FooterColumn as FooterColumnData } from '../../types';
 import { cn } from '../../lib/cn';
 import { socialLinks } from '../icons/SocialIcons';
+import { AppLink } from '../ui/AppLink';
 import { Container } from '../ui/Container';
 import { Logo } from '../ui/Logo';
 
@@ -31,9 +32,9 @@ function FooterColumn({ column }: { column: FooterColumnData }) {
       <ul id={listId} className={cn('space-y-3 pb-5 md:mt-5 md:block md:pb-0', open ? 'block' : 'hidden')}>
         {column.links.map((link) => (
           <li key={link.label}>
-            <a href={link.href} className="text-sm text-slate-400 transition-colors hover:text-white">
+            <AppLink href={link.href} className="text-sm text-slate-400 transition-colors hover:text-white">
               {link.label}
-            </a>
+            </AppLink>
           </li>
         ))}
       </ul>
@@ -129,9 +130,9 @@ export function Footer() {
           <ul className="flex flex-wrap gap-x-6 gap-y-2">
             {legalLinks.map((link) => (
               <li key={link.label}>
-                <a href={link.href} className="text-slate-400 transition-colors hover:text-white">
+                <AppLink href={link.href} className="text-slate-400 transition-colors hover:text-white">
                   {link.label}
-                </a>
+                </AppLink>
               </li>
             ))}
           </ul>

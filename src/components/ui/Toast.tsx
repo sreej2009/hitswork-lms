@@ -6,7 +6,7 @@ import { useStore } from '../../context/StoreContext';
 export function Toast() {
   const { toast } = useStore();
   return (
-    <div aria-live="polite" className="pointer-events-none fixed inset-x-0 bottom-5 z-[60] flex justify-center px-4">
+    <div aria-live="polite" className="pointer-events-none fixed inset-x-0 bottom-5 z-[60] flex justify-center px-4 in-data-bottom-bar:max-lg:bottom-28">
       <AnimatePresence>
         {toast && (
           <motion.div

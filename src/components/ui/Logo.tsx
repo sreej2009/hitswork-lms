@@ -1,4 +1,5 @@
 import { cn } from '../../lib/cn';
+import { AppLink } from './AppLink';
 
 /** Brand logo (mark + wordmark) served from /public. */
 const LOGO_SRC = `${import.meta.env.BASE_URL}images/Hitswork.png`;
@@ -13,7 +14,7 @@ interface LogoProps {
 
 export function Logo({ tone = 'dark', className }: LogoProps) {
   return (
-    <a href={import.meta.env.BASE_URL} className={cn('inline-flex shrink-0 items-center rounded-lg', className)}>
+    <AppLink href="/" className={cn('inline-flex shrink-0 items-center rounded-lg', className)}>
       <img
         src={LOGO_SRC}
         alt="Hitswork"
@@ -29,6 +30,6 @@ export function Logo({ tone = 'dark', className }: LogoProps) {
         )}
         draggable={false}
       />
-    </a>
+    </AppLink>
   );
 }

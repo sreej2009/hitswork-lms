@@ -1,5 +1,6 @@
-import { useEffect, useId, useRef } from 'react';
+import { useEffect, useId, useRef, type FormEvent } from 'react';
 import { Search } from 'lucide-react';
+import { useNavigate } from 'react-router';
 import { cn } from '../../lib/cn';
 
 interface SearchBarProps {
@@ -12,6 +13,14 @@ interface SearchBarProps {
 export function SearchBar({ className, autoFocus, hotkey }: SearchBarProps) {
   const id = useId();
   const inputRef = useRef<HTMLInputElement>(null);
+  const navigate = useNavigate();
+
+  const onSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const q = inputRef.current?.value.trim() ?? '';
+    navigate(q ? `/courses?q=${encodeURIComponent(q)}` : '/courses');
+    inputRef.current?.blur();
+  };
 
   useEffect(() => {
     if (!hotkey) return;
@@ -28,7 +37,7 @@ export function SearchBar({ className, autoFocus, hotkey }: SearchBarProps) {
   }, [hotkey]);
 
   return (
-    <form role="search" onSubmit={(event) => event.preventDefault()} className={cn('group relative flex items-center', className)}>
+    <form role="search" onSubmit={onSubmit} className={cn('group relative flex items-center', className)}>
       <label htmlFor={id} className="sr-only">
         Search for courses, skills, or instructors
       </label>

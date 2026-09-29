@@ -1,17 +1,22 @@
-import { useEffect, useRef, useState, type RefObject } from 'react';
+import { useRef, useState, type FormEvent, type RefObject } from 'react';
+import { NavLink, useNavigate } from 'react-router';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Bell, ChevronDown, Heart, ShoppingCart, X } from 'lucide-react';
-import { categories } from '../../data/categories';
+import { ChevronDown, GraduationCap, Heart, LogOut, Search, ShoppingCart, X } from 'lucide-react';
+import { categories, categoryHref } from '../../data/categories';
 import { primaryNav } from '../../data/navigation';
+import { useAuth } from '../../context/AuthContext';
 import { useStore } from '../../context/StoreContext';
+import { useModalDialog } from '../../hooks/useModalDialog';
 import { accents } from '../../lib/accents';
 import { cn } from '../../lib/cn';
+import { AppLink } from '../ui/AppLink';
+import { Avatar } from '../ui/Avatar';
 import { Button } from '../ui/Button';
 import { IconButton } from '../ui/IconButton';
 import { Logo } from '../ui/Logo';
 import { easeOutSoft } from '../ui/Reveal';
-import { SearchBar } from './SearchBar';
+import { accountLinks, useSignOut } from './UserMenu';
 
 interface MobileDrawerProps {
   open: boolean;
@@ -20,52 +25,36 @@ interface MobileDrawerProps {
   returnFocusRef: RefObject<HTMLElement | null>;
 }
 
-const FOCUSABLE = 'a[href], button:not([disabled]), input, [tabindex]:not([tabindex="-1"])';
-
 export function MobileDrawer({ open, onClose, returnFocusRef }: MobileDrawerProps) {
   const panelRef = useRef<HTMLDivElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
   const [categoriesOpen, setCategoriesOpen] = useState(false);
-  const { cart, wishlist } = useStore();
+  const { cart, wishlist, enrolled } = useStore();
+  const { user, isAuthenticated } = useAuth();
+  const signOut = useSignOut();
+  const navigate = useNavigate();
 
-  useEffect(() => {
-    if (!open) return;
-    const returnTo = returnFocusRef.current;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    closeRef.current?.focus();
+  useModalDialog({
+    open,
+    onClose,
+    panelRef,
+    initialFocusRef: closeRef,
+    returnFocusRef,
+    closeWhenMatches: '(min-width: 75rem)',
+  });
 
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose();
-      if (event.key !== 'Tab' || !panelRef.current) return;
-      // Keep keyboard focus inside the drawer.
-      const nodes = panelRef.current.querySelectorAll<HTMLElement>(FOCUSABLE);
-      const first = nodes[0];
-      const last = nodes[nodes.length - 1];
-      if (event.shiftKey && document.activeElement === first) {
-        event.preventDefault();
-        last?.focus();
-      } else if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault();
-        first?.focus();
-      }
-    };
-    const onResize = () => {
-      if (window.matchMedia('(min-width: 75rem)').matches) onClose();
-    };
+  // Colours are set per state (not layered) so the active style never competes with the default.
+  const linkBase = 'flex w-full items-center justify-between rounded-xl px-3 py-3 text-[15px] font-medium transition-colors';
+  const linkClass = cn(linkBase, 'text-ink hover:bg-canvas');
+  const navLinkClass = ({ isActive }: { isActive: boolean }) =>
+    cn(linkBase, isActive ? 'bg-brand-50 text-brand-700' : 'text-ink hover:bg-canvas');
 
-    document.addEventListener('keydown', onKeyDown);
-    window.addEventListener('resize', onResize);
-    return () => {
-      document.body.style.overflow = previousOverflow;
-      document.removeEventListener('keydown', onKeyDown);
-      window.removeEventListener('resize', onResize);
-      returnTo?.focus();
-    };
-  }, [open, onClose, returnFocusRef]);
-
-  const linkClass =
-    'flex w-full items-center justify-between rounded-xl px-3 py-3 text-[15px] font-medium text-ink transition-colors hover:bg-canvas';
+  const onSearch = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const q = String(new FormData(event.currentTarget).get('q') ?? '').trim();
+    onClose();
+    navigate(q ? `/courses?q=${encodeURIComponent(q)}` : '/courses');
+  };
 
   return createPortal(
     <AnimatePresence>
@@ -91,7 +80,7 @@ export function MobileDrawer({ open, onClose, returnFocusRef }: MobileDrawerProp
             initial={{ x: '100%' }}
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
-            transition={{ duration: 0.36, ease: easeOutSoft }}
+            transition={{ duration: 0.32, ease: easeOutSoft }}
             className="fixed inset-y-0 right-0 z-[71] flex w-[min(88vw,380px)] flex-col bg-white shadow-2xl"
           >
             <div className="flex h-16 items-center justify-between border-b border-line px-5">
@@ -100,10 +89,13 @@ export function MobileDrawer({ open, onClose, returnFocusRef }: MobileDrawerProp
             </div>
 
             <div className="flex-1 overflow-y-auto px-3 py-4">
-              <SearchBar className="mx-2 mb-4" />
-
               <nav aria-label="Mobile">
                 <ul className="space-y-0.5">
+                  <li>
+                    <NavLink to="/" end onClick={onClose} className={navLinkClass}>
+                      Home
+                    </NavLink>
+                  </li>
                   <li>
                     <button
                       type="button"
@@ -132,8 +124,9 @@ export function MobileDrawer({ open, onClose, returnFocusRef }: MobileDrawerProp
                             const Icon = category.icon;
                             return (
                               <li key={category.id}>
-                                <a
-                                  href={`/categories/${category.id}`}
+                                <AppLink
+                                  href={categoryHref(category.id)}
+                                  onClick={onClose}
                                   className="flex items-center gap-2.5 rounded-lg p-2 text-sm font-medium text-body transition-colors hover:bg-canvas hover:text-ink"
                                 >
                                   <span
@@ -146,7 +139,7 @@ export function MobileDrawer({ open, onClose, returnFocusRef }: MobileDrawerProp
                                     <Icon aria-hidden className="size-4" strokeWidth={2} />
                                   </span>
                                   <span className="leading-tight">{category.name}</span>
-                                </a>
+                                </AppLink>
                               </li>
                             );
                           })}
@@ -156,44 +149,91 @@ export function MobileDrawer({ open, onClose, returnFocusRef }: MobileDrawerProp
                   </li>
                   {primaryNav.map((link) => (
                     <li key={link.label}>
-                      <a href={link.href} onClick={onClose} className={linkClass}>
+                      <NavLink to={link.href} onClick={onClose} className={navLinkClass}>
                         {link.label}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-
-                <div className="mx-3 my-3 h-px bg-line" />
-
-                <ul className="space-y-0.5">
-                  {[
-                    { label: 'My cart', icon: ShoppingCart, count: cart.size },
-                    { label: 'Wishlist', icon: Heart, count: wishlist.size },
-                    { label: 'Notifications', icon: Bell, count: 3 },
-                  ].map(({ label, icon: Icon, count }) => (
-                    <li key={label}>
-                      <a href="#" className={linkClass}>
-                        <span className="flex items-center gap-3">
-                          <Icon aria-hidden className="size-[18px] text-muted" strokeWidth={1.9} />
-                          {label}
-                        </span>
-                        {count > 0 && (
-                          <span className="rounded-full bg-brand-50 px-2 py-0.5 text-xs font-semibold text-brand-700">
-                            {count}
-                          </span>
-                        )}
-                      </a>
+                      </NavLink>
                     </li>
                   ))}
                 </ul>
               </nav>
+
+              <form role="search" onSubmit={onSearch} className="group relative mx-1 mt-5">
+                <label htmlFor="drawer-search" className="sr-only">
+                  Search courses
+                </label>
+                <Search
+                  aria-hidden
+                  className="pointer-events-none absolute top-1/2 left-4 size-[18px] -translate-y-1/2 text-subtle group-focus-within:text-brand-600"
+                  strokeWidth={2}
+                />
+                <input
+                  id="drawer-search"
+                  type="search"
+                  name="q"
+                  autoComplete="off"
+                  placeholder="Search courses..."
+                  className="h-12 w-full rounded-full border border-line bg-canvas pr-4 pl-11 text-[15px] text-ink outline-none transition-[border-color,box-shadow,background-color] placeholder:text-subtle focus:border-brand-300 focus:bg-white focus:ring-4 focus:ring-brand-100"
+                />
+              </form>
+
+              <div className="mx-3 my-4 h-px bg-line" />
+
+              <ul className="space-y-0.5" aria-label="Your account">
+                {[
+                  ...(isAuthenticated
+                    ? accountLinks.map((link) => ({ ...link, count: link.href === '/my-learning' ? enrolled.size : 0 }))
+                    : [{ label: 'My Learning', href: '/my-learning', icon: GraduationCap, count: enrolled.size }]),
+                  { label: 'My Cart', href: '/cart', icon: ShoppingCart, count: cart.size },
+                  { label: 'Wishlist', href: '/cart', icon: Heart, count: wishlist.size },
+                ].map(({ label, href, icon: Icon, count }) => (
+                  <li key={label}>
+                    <AppLink href={href} onClick={onClose} className={linkClass}>
+                      <span className="flex items-center gap-3">
+                        <Icon aria-hidden className="size-[18px] text-muted" strokeWidth={1.9} />
+                        {label}
+                      </span>
+                      {count > 0 && (
+                        <span className="rounded-full bg-brand-50 px-2 py-0.5 text-xs font-semibold text-brand-700">
+                          {count}
+                        </span>
+                      )}
+                    </AppLink>
+                  </li>
+                ))}
+              </ul>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 border-t border-line p-5">
-              <Button variant="secondary" href="/login">
-                Sign In
-              </Button>
-              <Button href="/signup">Sign Up</Button>
+            <div className="border-t border-line p-5">
+              {isAuthenticated && user ? (
+                <div className="flex items-center gap-3">
+                  <Avatar name={user.name} />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold text-ink">{user.name}</p>
+                    <p className="truncate text-xs text-muted">{user.email}</p>
+                  </div>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    shape="pill"
+                    icon={LogOut}
+                    onClick={() => {
+                      onClose();
+                      signOut();
+                    }}
+                  >
+                    Sign Out
+                  </Button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-3">
+                  <Button variant="secondary" shape="pill" href="/login" onClick={onClose}>
+                    Sign In
+                  </Button>
+                  <Button shape="pill" href="/register" onClick={onClose}>
+                    Sign Up
+                  </Button>
+                </div>
+              )}
             </div>
           </motion.div>
         </>

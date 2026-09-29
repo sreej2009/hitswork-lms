@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronDown, Sparkles } from 'lucide-react';
-import { categories } from '../../data/categories';
+import { categories, categoryHref } from '../../data/categories';
 import { accents } from '../../lib/accents';
 import { cn } from '../../lib/cn';
 import { formatNumber } from '../../lib/format';
+import { AppLink } from '../ui/AppLink';
 import { TextLink } from '../ui/TextLink';
 
 /** Desktop "Categories" mega-menu. Opens on hover or click; closes on Escape or outside click. */
@@ -90,8 +91,8 @@ export function CategoriesMenu() {
                   const Icon = category.icon;
                   return (
                     <li key={category.id}>
-                      <a
-                        href={`/categories/${category.id}`}
+                      <AppLink
+                        href={categoryHref(category.id)}
                         className="group flex items-center gap-3 rounded-xl p-2.5 transition-colors hover:bg-canvas"
                       >
                         <span
@@ -107,7 +108,7 @@ export function CategoriesMenu() {
                           <span className="block truncate text-sm font-semibold text-ink">{category.name}</span>
                           <span className="block text-xs text-muted">{formatNumber(category.courseCount)} courses</span>
                         </span>
-                      </a>
+                      </AppLink>
                     </li>
                   );
                 })}
@@ -119,7 +120,7 @@ export function CategoriesMenu() {
                     <span className="font-semibold text-ink">New:</span> Generative AI career path
                   </span>
                 </p>
-                <TextLink href="#courses">All courses</TextLink>
+                <TextLink href="/courses">All courses</TextLink>
               </div>
             </div>
           </motion.div>

@@ -97,3 +97,6 @@ const accentByName: Record<string, AccentKey> = {
 
 /** Accent colour for a course's category label. */
 export const accentForCategory = (name: string): AccentKey => accentByName[name] ?? 'indigo';
+
+/** Courses page pre-filtered to one category. */
+export const categoryHref = (id: string) => `/courses?category=${id}`;

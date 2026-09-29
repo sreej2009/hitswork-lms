@@ -1,7 +1,7 @@
 import type { FooterColumn, NavLink } from '../types';
 
 export const primaryNav: NavLink[] = [
-  { label: 'Courses', href: '#courses' },
+  { label: 'Courses', href: '/courses' },
   { label: 'Teach on Hitswork', href: '/teach' },
   { label: 'For Business', href: '/business' },
 ];
@@ -19,12 +19,12 @@ export const footerColumns: FooterColumn[] = [
   {
     title: 'Categories',
     links: [
-      { label: 'Development', href: '/categories/development' },
-      { label: 'Business', href: '/categories/business' },
-      { label: 'Design', href: '/categories/design' },
-      { label: 'Marketing', href: '/categories/marketing' },
-      { label: 'Photography', href: '/categories/photography' },
-      { label: 'IT & Software', href: '/categories/it-software' },
+      { label: 'Development', href: '/courses?category=development' },
+      { label: 'Business', href: '/courses?category=business' },
+      { label: 'Design', href: '/courses?category=design' },
+      { label: 'Marketing', href: '/courses?category=marketing' },
+      { label: 'Photography', href: '/courses?category=photography' },
+      { label: 'IT & Software', href: '/courses?category=it-software' },
     ],
   },
   {

@@ -50,7 +50,7 @@ function HeroCopy() {
       </motion.p>
 
       <motion.div variants={itemVariants} className="mt-9 flex flex-col gap-3 sm:flex-row">
-        <Button size="lg" arrow href="#courses">
+        <Button size="lg" arrow href="/courses">
           Explore Courses
         </Button>
         <Button size="lg" variant="secondary" href="/teach">

@@ -95,7 +95,7 @@ export function UpgradeBanner() {
                   ))}
                 </ul>
 
-                <Button size="lg" arrow href="#courses" className="mt-9">
+                <Button size="lg" arrow href="/courses" className="mt-9">
                   Explore All Courses
                 </Button>
               </div>

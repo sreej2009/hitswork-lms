@@ -5,7 +5,8 @@ import { useStore } from '../../context/StoreContext';
 import { accentForCategory } from '../../data/categories';
 import { accents } from '../../lib/accents';
 import { cn } from '../../lib/cn';
-import { formatCompact, formatNumber, formatPrice } from '../../lib/format';
+import { discountPercent, formatCompact, formatNumber, formatPrice } from '../../lib/format';
+import { AppLink } from '../ui/AppLink';
 import { Badge } from '../ui/Badge';
 import { RatingStars } from '../ui/RatingStars';
 import { SmartImage } from '../ui/SmartImage';
@@ -45,8 +46,16 @@ function WishlistButton({ course }: { course: Course }) {
 }
 
 function CartButton({ course }: { course: Course }) {
-  const { cart, toggleCart } = useStore();
+  const { cart, enrolled, toggleCart } = useStore();
   const added = cart.has(course.id);
+  if (enrolled.has(course.id)) {
+    return (
+      <span className="relative z-10 inline-flex h-8 shrink-0 items-center gap-1 rounded-full bg-emerald-50 px-2.5 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-100">
+        <Check aria-hidden className="size-3.5" strokeWidth={2.6} />
+        Purchased
+      </span>
+    );
+  }
   return (
     <button
       type="button"
@@ -78,7 +87,8 @@ interface CourseCardProps {
 
 export function CourseCard({ course, priority, className }: CourseCardProps) {
   const accent = accents[accentForCategory(course.category)];
-  const discount = Math.round((1 - course.price / course.originalPrice) * 100);
+  const isFree = course.price === 0;
+  const discount = discountPercent(course.price, course.originalPrice);
 
   return (
     <article
@@ -122,12 +132,12 @@ export function CourseCard({ course, priority, className }: CourseCardProps) {
         </div>
 
         <h3 className="mt-1.5 line-clamp-2 min-h-[2.75rem] font-display text-base leading-[1.375] font-bold tracking-[-0.01em]">
-          <a
-            href={`/courses/${course.id}`}
+          <AppLink
+            href={`/course/${course.id}`}
             className="rounded-sm transition-colors outline-none group-hover:text-brand-700 after:absolute after:inset-0 after:rounded-card focus-visible:after:ring-2 focus-visible:after:ring-brand-500 focus-visible:after:ring-offset-2"
           >
             {course.title}
-          </a>
+          </AppLink>
         </h3>
 
         <p className="mt-1.5 truncate text-sm text-muted">{course.instructor}</p>
@@ -154,17 +164,26 @@ export function CourseCard({ course, priority, className }: CourseCardProps) {
 
         <div className="flex items-end justify-between gap-3 border-t border-line pt-4">
           <div className="min-w-0">
-            <p className="flex items-baseline gap-2">
-              <span className="font-display text-xl font-bold tracking-tight text-ink">
-                <span className="sr-only">Price: </span>
-                {formatPrice(course.price)}
-              </span>
-              <span className="text-sm text-subtle line-through">
-                <span className="sr-only">Original price: </span>
-                {formatPrice(course.originalPrice)}
-              </span>
-            </p>
-            <p className="mt-0.5 text-xs font-medium text-emerald-600">{discount}% off today</p>
+            {isFree ? (
+              <>
+                <p className="font-display text-xl font-bold tracking-tight text-ink">Free</p>
+                <p className="mt-0.5 text-xs font-medium text-emerald-600">Enroll at no cost</p>
+              </>
+            ) : (
+              <>
+                <p className="flex items-baseline gap-2">
+                  <span className="font-display text-xl font-bold tracking-tight text-ink">
+                    <span className="sr-only">Price: </span>
+                    {formatPrice(course.price)}
+                  </span>
+                  <span className="text-sm text-subtle line-through">
+                    <span className="sr-only">Original price: </span>
+                    {formatPrice(course.originalPrice)}
+                  </span>
+                </p>
+                <p className="mt-0.5 text-xs font-medium text-emerald-600">{discount}% off today</p>
+              </>
+            )}
           </div>
           <CartButton course={course} />
         </div>

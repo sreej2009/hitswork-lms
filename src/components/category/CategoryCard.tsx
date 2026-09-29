@@ -1,7 +1,9 @@
 import { ArrowRight } from 'lucide-react';
 import type { Category } from '../../types';
+import { categoryHref } from '../../data/categories';
 import { accents } from '../../lib/accents';
 import { cn } from '../../lib/cn';
+import { AppLink } from '../ui/AppLink';
 import { formatNumber } from '../../lib/format';
 
 /** Large category tile with an accent wash, course count and popular topics. */
@@ -9,8 +11,8 @@ export function CategoryCard({ category }: { category: Category }) {
   const accent = accents[category.accent];
   const Icon = category.icon;
   return (
-    <a
-      href={`/categories/${category.id}`}
+    <AppLink
+      href={categoryHref(category.id)}
       className={cn(
         'group relative isolate flex h-full flex-col overflow-hidden rounded-[20px] border border-line bg-white p-5 shadow-card sm:p-6',
         'transition-[transform,box-shadow,border-color] duration-300 ease-out-soft hover:-translate-y-1 hover:shadow-card-hover',
@@ -57,6 +59,6 @@ export function CategoryCard({ category }: { category: Category }) {
           </li>
         ))}
       </ul>
-    </a>
+    </AppLink>
   );
 }
