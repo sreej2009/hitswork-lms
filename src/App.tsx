@@ -6,6 +6,8 @@ import { StoreProvider } from './context/StoreContext';
 import { GuestOnly, RequireAuth } from './components/auth/RouteGuards';
 import { DashboardLayout } from './components/dashboard/DashboardLayout';
 import { RootLayout, SiteLayout } from './components/layout/SiteLayout';
+import { BusinessContactPage } from './pages/business/BusinessContactPage';
+import { BusinessPage } from './pages/business/BusinessPage';
 import { CartPage } from './pages/CartPage';
 import { CheckoutPage } from './pages/CheckoutPage';
 import { CheckoutSuccessPage } from './pages/CheckoutSuccessPage';
@@ -25,6 +27,8 @@ import { OverviewPage } from './pages/dashboard/OverviewPage';
 import { ProfilePage } from './pages/dashboard/ProfilePage';
 import { SettingsPage } from './pages/dashboard/SettingsPage';
 import { WishlistPage } from './pages/dashboard/WishlistPage';
+import { TeachPage } from './pages/teach/TeachPage';
+import { TeachRegisterPage } from './pages/teach/TeachRegisterPage';
 
 // Vite's BASE_URL is "/" locally and "/<repo>/" on GitHub Pages.
 const basename = import.meta.env.BASE_URL.replace(/\/$/, '') || '/';
@@ -69,6 +73,10 @@ export default function App() {
                     <Route path="cart" element={<CartPage />} />
                     <Route path="checkout" element={<CheckoutPage />} />
                     <Route path="checkout/success" element={<CheckoutSuccessPage />} />
+                    <Route path="teach" element={<TeachPage />} />
+                    <Route path="teach/register" element={<TeachRegisterPage />} />
+                    <Route path="business" element={<BusinessPage />} />
+                    <Route path="business/contact" element={<BusinessContactPage />} />
                     <Route path="*" element={<NotFoundPage />} />
                   </Route>
                 </Route>

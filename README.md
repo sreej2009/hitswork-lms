@@ -21,14 +21,17 @@ src/
   lib/                 Helpers: class joining, number/price formatting, Unsplash URLs, accent palette
   context/             StoreContext: cart, wishlist, purchases, coupon, orders + toasts; AuthContext: demo sign-in;
                        LearningContext: course progress, certificates, notifications
-  hooks/               useModalDialog (focus trap, Escape, scroll lock), useDocumentTitle
+  hooks/               useModalDialog (focus trap, Escape, scroll lock), useDocumentTitle, usePageMeta (title + description)
   pages/               Home, Courses (/courses), CourseDetails (/course/:id), Cart (/cart), Checkout (/checkout),
                        CheckoutSuccess (/checkout/success), CoursePlayer (/learn/:courseId), NotFound
     auth/              Login (/login), Register (/register), ForgotPassword (/forgot-password)
+    teach/             Teach on Hitswork (/teach) and the instructor application (/teach/register)
+    business/          Hitswork for Business (/business) and the demo request form (/business/contact)
     dashboard/         Student area: Overview (/dashboard), MyLearning, Wishlist, Certificates (+ /certificates/:id),
                        Achievements, Profile, Settings — all behind sign-in, in DashboardLayout
   components/
-    ui/                Primitives: Button, IconButton, Badge, SectionHeader, TextLink, Reveal, SmartImage…
+    ui/                Primitives: Button, IconButton, Badge, SectionHeader, TextLink, Reveal, SmartImage, Floating,
+                       FaqAccordion, CountUp, SubmissionSuccess, Form controls (TextInput, SelectInput, TextArea…)
     layout/            Navbar (docked → floating on scroll), UserMenu, CategoriesMenu, SearchBar, MobileDrawer, Footer
     auth/              AuthShell (two-column layout), PasswordInput, SocialButtons, RouteGuards (RequireAuth, GuestOnly)
     dashboard/         DashboardLayout + Sidebar + Header, LearningProgressCard, ProgressBar, CertificateArtwork,
@@ -41,7 +44,8 @@ src/
     category/          CategoryChip (strip), CategoryCard (top categories)
     feature/           FeatureCard
     icons/             Brand social icons (Lucide no longer ships these)
-  sections/            One file per homepage section, composed in pages/HomePage.tsx
+  sections/            One file per homepage section, composed in pages/HomePage.tsx;
+    teach/, business/  Sections for the instructor and business landing pages
 ```
 
 Content lives in `src/data`, so the copy, courses and links can change without touching components.
@@ -107,3 +111,17 @@ first sign-in; see `DEMO_ACCOUNT` in `src/lib/auth.ts`). The sign-in page has a 
 - **Certificates** render in HTML (`CertificateArtwork`) and download as a one-page PDF generated in the browser
   (`lib/certificatePdf.ts`, no dependencies).
 - Streak, weekly-goal and daily-activity figures are static sample values in `data/learning.ts`.
+
+### Teach on Hitswork & Hitswork for Business (demo)
+
+- `/teach` is the instructor landing page; "Start Teaching" / "Become an Instructor" open `/teach/register`.
+- `/business` is the enterprise landing page; "Talk to Our Team" and the plan cards open `/business/contact`
+  (plan cards pass `?plan=small-teams|growing|enterprise` to prefill the company size). The contact form only
+  accepts work email addresses.
+- Both forms validate on the client (`lib/instructorApplication.ts`, `lib/businessContact.ts`), simulate a short
+  request and store the submission in `localStorage` (`hitswork_instructor_application`,
+  `hitswork_business_enquiry`) with a reference ID such as `HIT-INS-2026-4821` or `HIT-BIZ-2026-4821`. Revisiting
+  the page shows the confirmation until "Submit a different application / another request" clears it.
+- Nothing is sent anywhere yet — connect a CRM or email service in those two lib files.
+- Dashboard previews, team table, revenue and analytics charts use sample data defined in `data/teach.ts` and
+  `data/business.ts`; company names, testimonials and figures are fictional and labelled as such on the page.

@@ -1,4 +1,10 @@
-import { forwardRef, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes } from 'react';
+import {
+  forwardRef,
+  type InputHTMLAttributes,
+  type ReactNode,
+  type SelectHTMLAttributes,
+  type TextareaHTMLAttributes,
+} from 'react';
 import { AlertCircle, Check, ChevronDown } from 'lucide-react';
 import { cn } from '../../lib/cn';
 
@@ -121,6 +127,29 @@ export const SelectInput = forwardRef<HTMLSelectElement, SelectInputProps>(funct
         strokeWidth={2.2}
       />
     </div>
+  );
+});
+
+interface TextAreaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {
+  invalid?: boolean;
+}
+
+export const TextArea = forwardRef<HTMLTextAreaElement, TextAreaProps>(function TextArea(
+  { invalid = false, className, rows = 5, ...rest },
+  ref,
+) {
+  return (
+    <textarea
+      ref={ref}
+      rows={rows}
+      aria-invalid={invalid || undefined}
+      className={cn(
+        'block w-full min-w-0 resize-y rounded-xl border bg-white px-4 py-3 text-[15px] leading-relaxed text-ink outline-none transition-[border-color,box-shadow] duration-200 placeholder:text-subtle',
+        controlState(invalid),
+        className,
+      )}
+      {...rest}
+    />
   );
 });
 

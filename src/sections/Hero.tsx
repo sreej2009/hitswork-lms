@@ -1,5 +1,4 @@
-import type { ReactNode } from 'react';
-import { motion, useReducedMotion, type Variants } from 'framer-motion';
+import { motion, type Variants } from 'framer-motion';
 import { ChartColumnIncreasing, Globe, PenTool, Rocket, type LucideIcon } from 'lucide-react';
 import { heroImage, heroStats, learnerAvatars } from '../data/home';
 import type { AccentKey } from '../types';
@@ -9,6 +8,7 @@ import { unsplash } from '../lib/images';
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
 import { Container } from '../components/ui/Container';
+import { Floating } from '../components/ui/Floating';
 import { easeOutSoft } from '../components/ui/Reveal';
 import { SmartImage } from '../components/ui/SmartImage';
 
@@ -74,34 +74,6 @@ function HeroCopy() {
           </div>
         ))}
       </motion.dl>
-    </motion.div>
-  );
-}
-
-interface FloatingProps {
-  children: ReactNode;
-  className?: string;
-  delay?: number;
-  duration?: number;
-  distance?: number;
-}
-
-/** Enters once, then drifts gently up and down. */
-function Floating({ children, className, delay = 0, duration = 6, distance = 8 }: FloatingProps) {
-  const reduceMotion = useReducedMotion();
-  return (
-    <motion.div
-      className={cn('absolute z-10', className)}
-      initial={{ opacity: 0, y: 14 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.7, delay: 0.55 + delay, ease: easeOutSoft }}
-    >
-      <motion.div
-        animate={reduceMotion ? undefined : { y: [0, -distance, 0] }}
-        transition={{ duration, delay, repeat: Infinity, ease: 'easeInOut' }}
-      >
-        {children}
-      </motion.div>
     </motion.div>
   );
 }
