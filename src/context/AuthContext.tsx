@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { hashPassword, normaliseEmail, simulateRequest, type AuthUser } from '../lib/auth';
+import { DEMO_ACCOUNT, hashPassword, normaliseEmail, simulateRequest, type AuthUser, type ProfilePatch } from '../lib/auth';
 
 // Storage keys. `hitswork_user` / `hitswork_authenticated` hold the session; `hitswork_accounts` is the
 // demo "user database" (email → name + password hash).
@@ -11,6 +11,10 @@ interface StoredAccount {
   name: string;
   passwordHash: string;
   joinedAt: string;
+  phone?: string;
+  country?: string;
+  /** Email the password hash was salted with; differs from the key after an email change. */
+  hashEmail?: string;
 }
 
 export class AuthError extends Error {
@@ -30,7 +34,10 @@ interface AuthValue {
   login: (email: string, password: string, remember: boolean) => Promise<AuthUser>;
   register: (name: string, email: string, password: string) => Promise<AuthUser>;
   logout: () => void;
-  updateProfile: (patch: Pick<AuthUser, 'name'>) => void;
+  /** Throws AuthError (field 'email') if the new email belongs to another account. */
+  updateProfile: (patch: ProfilePatch) => AuthUser;
+  /** Throws AuthError (field 'password') if `current` is wrong. */
+  changePassword: (current: string, next: string) => Promise<void>;
   requestPasswordReset: (email: string) => Promise<void>;
 }
 
@@ -88,6 +95,21 @@ function writeAccounts(accounts: Record<string, StoredAccount>) {
   }
 }
 
+/** Creates the built-in demo account on first use in this browser. */
+async function ensureDemoAccount(): Promise<StoredAccount> {
+  const accounts = readAccounts();
+  const existing = accounts[DEMO_ACCOUNT.email];
+  if (existing) return existing;
+  const account: StoredAccount = {
+    name: DEMO_ACCOUNT.name,
+    passwordHash: await hashPassword(DEMO_ACCOUNT.email, DEMO_ACCOUNT.password),
+    joinedAt: DEMO_ACCOUNT.joinedAt,
+    country: 'India',
+  };
+  writeAccounts({ ...readAccounts(), [DEMO_ACCOUNT.email]: account });
+  return account;
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(readSession);
 
@@ -103,11 +125,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback(async (email: string, password: string, remember: boolean) => {
     await simulateRequest();
     const key = normaliseEmail(email);
-    const account = readAccounts()[key];
+    const account = key === DEMO_ACCOUNT.email ? await ensureDemoAccount() : readAccounts()[key];
     if (!account) throw new AuthError('We couldn’t find an account with that email.', 'email');
-    if (account.passwordHash !== (await hashPassword(key, password)))
+    if (account.passwordHash !== (await hashPassword(account.hashEmail ?? key, password)))
       throw new AuthError('Incorrect password. Try again or reset it.', 'password');
-    const next: AuthUser = { name: account.name, email: key, joinedAt: account.joinedAt };
+    const next: AuthUser = {
+      name: account.name,
+      email: key,
+      joinedAt: account.joinedAt,
+      phone: account.phone,
+      country: account.country,
+    };
     writeSession(next, remember);
     setUser(next);
     return next;
@@ -117,7 +145,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await simulateRequest();
     const key = normaliseEmail(email);
     const accounts = readAccounts();
-    if (accounts[key]) throw new AuthError('An account with this email already exists.', 'email');
+    if (accounts[key] || key === DEMO_ACCOUNT.email)
+      throw new AuthError('An account with this email already exists.', 'email');
     const joinedAt = new Date().toISOString();
     accounts[key] = { name: name.trim(), passwordHash: await hashPassword(key, password), joinedAt };
     writeAccounts(accounts);
@@ -133,17 +162,49 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const updateProfile = useCallback(
-    (patch: Pick<AuthUser, 'name'>) => {
-      if (!user) return;
-      const next = { ...user, name: patch.name.trim() };
+    (patch: ProfilePatch) => {
+      if (!user) throw new AuthError('You’re not signed in.');
+      const email = normaliseEmail(patch.email);
       const accounts = readAccounts();
-      if (accounts[next.email]) {
-        accounts[next.email] = { ...accounts[next.email], name: next.name };
+      if (email !== user.email && accounts[email]) throw new AuthError('Another account already uses this email.', 'email');
+      const account = accounts[user.email];
+      if (account) {
+        delete accounts[user.email];
+        accounts[email] = {
+          ...account,
+          name: patch.name.trim(),
+          phone: patch.phone,
+          country: patch.country,
+          hashEmail: account.hashEmail ?? user.email,
+        };
         writeAccounts(accounts);
       }
+      const next: AuthUser = {
+        ...user,
+        name: patch.name.trim(),
+        email,
+        phone: patch.phone?.trim() || undefined,
+        country: patch.country || undefined,
+      };
       // Rewrite into whichever storage currently holds the session.
       writeSession(next, safeGet(window.localStorage, AUTH_KEY) === 'true');
       setUser(next);
+      return next;
+    },
+    [user],
+  );
+
+  const changePassword = useCallback(
+    async (current: string, next: string) => {
+      await simulateRequest(700);
+      if (!user) throw new AuthError('You’re not signed in.');
+      const accounts = readAccounts();
+      const account = accounts[user.email];
+      const salt = account?.hashEmail ?? user.email;
+      if (!account || account.passwordHash !== (await hashPassword(salt, current)))
+        throw new AuthError('Your current password is incorrect.', 'password');
+      accounts[user.email] = { ...account, passwordHash: await hashPassword(salt, next) };
+      writeAccounts(accounts);
     },
     [user],
   );
@@ -154,8 +215,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo(
-    () => ({ user, isAuthenticated: user !== null, login, register, logout, updateProfile, requestPasswordReset }),
-    [user, login, register, logout, updateProfile, requestPasswordReset],
+    () => ({
+      user,
+      isAuthenticated: user !== null,
+      login,
+      register,
+      logout,
+      updateProfile,
+      changePassword,
+      requestPasswordReset,
+    }),
+    [user, login, register, logout, updateProfile, changePassword, requestPasswordReset],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

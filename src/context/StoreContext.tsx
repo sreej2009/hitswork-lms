@@ -44,6 +44,8 @@ interface StoreValue {
   moveToCart: (id: string, title: string) => void;
   toggleWishlist: (id: string, title: string) => void;
   enroll: (id: string, title: string) => void;
+  /** Adds course access without a toast (sample data, migrations). */
+  grantAccess: (ids: string[]) => void;
   /** Returns false for an unknown code */
   applyCoupon: (code: string) => boolean;
   removeCoupon: () => void;
@@ -57,16 +59,17 @@ const StoreContext = createContext<StoreValue | null>(null);
 // ---------------------------------------------------------------------------
 
 const KEYS = {
-  cart: 'hitswork:cart',
-  wishlist: 'hitswork:wishlist',
-  enrolled: 'hitswork:enrolled',
-  coupon: 'hitswork:coupon',
-  orders: 'hitswork:orders',
+  cart: 'hitswork_cart',
+  wishlist: 'hitswork_wishlist',
+  enrolled: 'hitswork_enrolled',
+  coupon: 'hitswork_coupon',
+  orders: 'hitswork_orders',
 } as const;
 
 function load<T>(key: string, fallback: T): T {
   try {
-    const raw = window.localStorage.getItem(key);
+    // Earlier builds used "hitswork:<name>" keys; read those once so saved carts aren't lost.
+    const raw = window.localStorage.getItem(key) ?? window.localStorage.getItem(key.replace('hitswork_', 'hitswork:'));
     return raw ? (JSON.parse(raw) as T) : fallback;
   } catch {
     return fallback;
@@ -173,6 +176,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     [notify],
   );
 
+  const grantAccess = useCallback((ids: string[]) => {
+    setEnrolled((current) => (ids.every((id) => current.has(id)) ? current : new Set([...current, ...ids])));
+  }, []);
+
   const applyCoupon = useCallback((code: string) => {
     const match = findCoupon(code);
     if (match) setCoupon(match.code);
@@ -208,6 +215,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       moveToCart,
       toggleWishlist,
       enroll,
+      grantAccess,
       applyCoupon,
       removeCoupon,
       placeOrder,
@@ -227,6 +235,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       moveToCart,
       toggleWishlist,
       enroll,
+      grantAccess,
       applyCoupon,
       removeCoupon,
       placeOrder,

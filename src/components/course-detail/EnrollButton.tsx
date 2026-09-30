@@ -14,7 +14,7 @@ interface EnrollButtonProps {
 /**
  * Paid courses: "Enroll Now" opens checkout for just this course.
  * Free courses: enroll in place after a brief processing state.
- * Owned courses: "Start Learning" goes to My Learning. State is shared, so every copy stays in sync.
+ * Owned courses: "Start Learning" opens the course player. State is shared, so every copy stays in sync.
  */
 export function EnrollButton({ course, size = 'lg', fullWidth, className }: EnrollButtonProps) {
   const { enrolled, enroll } = useStore();
@@ -24,7 +24,7 @@ export function EnrollButton({ course, size = 'lg', fullWidth, className }: Enro
 
   if (enrolled.has(course.id)) {
     return (
-      <Button href="/my-learning" size={size} fullWidth={fullWidth} icon={PlayCircle} className={className}>
+      <Button href={`/learn/${course.id}`} size={size} fullWidth={fullWidth} icon={PlayCircle} className={className}>
         Start Learning
       </Button>
     );

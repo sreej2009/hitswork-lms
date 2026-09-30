@@ -1,10 +1,10 @@
 import { useCallback, useState, type FormEvent } from 'react';
-import { AlertCircle, Info, Loader2 } from 'lucide-react';
+import { AlertCircle, Info, Loader2, Sparkles } from 'lucide-react';
 import { AuthError, useAuth } from '../../context/AuthContext';
 import { useStore } from '../../context/StoreContext';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 import { useForm } from '../../hooks/useForm';
-import { firstName, validateEmail, validatePassword } from '../../lib/auth';
+import { DEMO_ACCOUNT, firstName, validateEmail, validatePassword } from '../../lib/auth';
 import { AuthDivider, PasswordInput, SocialButtons } from '../../components/auth/AuthFields';
 import { AuthShell } from '../../components/auth/AuthShell';
 import { AppLink } from '../../components/ui/AppLink';
@@ -61,6 +61,34 @@ export function LoginPage() {
         </>
       }
     >
+      <div className="mb-6 flex flex-col gap-3 rounded-2xl border border-brand-100 bg-brand-50/60 p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-start gap-3">
+          <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-white text-brand-600 shadow-xs">
+            <Sparkles aria-hidden className="size-[18px]" strokeWidth={2} />
+          </span>
+          <div className="min-w-0 text-sm">
+            <p className="font-semibold text-ink">Try the demo account</p>
+            <p className="mt-0.5 text-body">
+              <span className="font-medium text-ink">{DEMO_ACCOUNT.email}</span> ·{' '}
+              <span className="font-medium text-ink">{DEMO_ACCOUNT.password}</span>
+            </p>
+          </div>
+        </div>
+        <Button
+          variant="secondary"
+          size="sm"
+          className="shrink-0"
+          onClick={() => {
+            setValue('email', DEMO_ACCOUNT.email);
+            setValue('password', DEMO_ACCOUNT.password);
+            setFormError(null);
+            document.getElementById(idFor('password'))?.focus();
+          }}
+        >
+          Use demo account
+        </Button>
+      </div>
+
       <form onSubmit={onSubmit} noValidate className="space-y-5" aria-label="Sign in">
         {formError && (
           <div role="alert" className="flex items-start gap-3 rounded-xl border border-rose-200 bg-rose-50 p-3.5 text-sm text-rose-800">

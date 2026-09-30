@@ -9,12 +9,13 @@ const LOGO_HEIGHT = 1641;
 interface LogoProps {
   /** `light` renders a white version for dark backgrounds */
   tone?: 'dark' | 'light';
+  /** Show only the eagle mark (collapsed sidebar) */
+  markOnly?: boolean;
   className?: string;
 }
 
-export function Logo({ tone = 'dark', className }: LogoProps) {
-  return (
-    <AppLink href="/" className={cn('inline-flex shrink-0 items-center rounded-lg', className)}>
+export function Logo({ tone = 'dark', markOnly = false, className }: LogoProps) {
+  const image = (
       <img
         src={LOGO_SRC}
         alt="Hitswork"
@@ -30,6 +31,11 @@ export function Logo({ tone = 'dark', className }: LogoProps) {
         )}
         draggable={false}
       />
+  );
+  return (
+    <AppLink href="/" aria-label={markOnly ? 'Hitswork home' : undefined} className={cn('inline-flex shrink-0 items-center rounded-lg', className)}>
+      {/* The mark sits in the left ~30% of the artwork, so a narrow window crops out the wordmark. */}
+      {markOnly ? <span className="block w-[31px] overflow-hidden">{image}</span> : image}
     </AppLink>
   );
 }

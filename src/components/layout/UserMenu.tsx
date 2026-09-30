@@ -34,7 +34,7 @@ export function useSignOut() {
 }
 
 /** Avatar + name button with an account dropdown (menu-button pattern). */
-export function UserMenu() {
+export function UserMenu({ compact = false }: { compact?: boolean }) {
   const { user } = useAuth();
   const signOut = useSignOut();
   const [open, setOpen] = useState(false);
@@ -98,17 +98,22 @@ export function UserMenu() {
           }
         }}
         className={cn(
-          'flex items-center gap-2 rounded-full py-1 pr-2.5 pl-1 transition-colors',
+          'flex items-center gap-2 rounded-full transition-colors',
+          compact ? 'p-1' : 'py-1 pr-2.5 pl-1',
           open ? 'bg-canvas' : 'hover:bg-canvas',
         )}
       >
         <Avatar name={user.name} size="xs" />
-        <span className="max-w-28 truncate text-sm font-semibold text-ink">{firstName(user.name)}</span>
-        <ChevronDown
-          aria-hidden
-          className={cn('size-4 text-muted transition-transform duration-200', open && 'rotate-180')}
-          strokeWidth={2.2}
-        />
+        {!compact && (
+          <>
+            <span className="max-w-28 truncate text-sm font-semibold text-ink">{firstName(user.name)}</span>
+            <ChevronDown
+              aria-hidden
+              className={cn('size-4 text-muted transition-transform duration-200', open && 'rotate-180')}
+              strokeWidth={2.2}
+            />
+          </>
+        )}
       </button>
 
       <AnimatePresence>

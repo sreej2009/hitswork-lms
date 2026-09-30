@@ -136,3 +136,93 @@ export interface Order {
   total: number;
   paymentMethod: PaymentMethodId;
 }
+
+// ---------------------------------------------------------------------------
+// Learning
+// ---------------------------------------------------------------------------
+
+export interface LearningRecord {
+  courseId: string;
+  /** ISO timestamps */
+  enrolledAt: string;
+  lastAccessedAt?: string;
+  completedAt?: string;
+  completedLessonIds: string[];
+  /** Lesson the learner last opened */
+  currentLessonId?: string;
+}
+
+export interface Certificate {
+  /** e.g. "HW-2026-7K4Q-M2PX" */
+  id: string;
+  courseId: string;
+  recipientName: string;
+  /** ISO timestamp */
+  issuedAt: string;
+}
+
+export type NotificationKind = 'lesson' | 'completed' | 'certificate' | 'streak' | 'enrolled';
+
+export interface AppNotification {
+  id: string;
+  kind: NotificationKind;
+  message: string;
+  /** ISO timestamp */
+  createdAt: string;
+  read: boolean;
+  href?: string;
+}
+
+// ---------------------------------------------------------------------------
+// Course player
+// ---------------------------------------------------------------------------
+
+export type { PlanLesson as Lesson, PlanSection as Section } from '../lib/lessonPlan';
+
+/** Per-lesson state, stored in `hitswork_lesson_progress`. */
+export interface LessonProgress {
+  completed: boolean;
+  /** Resume point in the video, in seconds */
+  positionSeconds: number;
+  /** ISO timestamp */
+  updatedAt: string;
+}
+
+/** Per-course summary, stored in `hitswork_course_progress` (derived from `hitswork_learning`). */
+export interface CourseProgress {
+  percent: number;
+  completedLessons: number;
+  totalLessons: number;
+  status: 'not-started' | 'in-progress' | 'completed';
+  currentLessonId?: string;
+  updatedAt: string;
+}
+
+export interface Note {
+  id: string;
+  courseId: string;
+  lessonId: string;
+  lessonTitle: string;
+  body: string;
+  /** ISO timestamps */
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Resource {
+  id: string;
+  title: string;
+  kind: 'pdf' | 'zip' | 'link';
+  description: string;
+  /** e.g. "1.2 MB" for downloads */
+  size?: string;
+  /** For links: internal path or external URL */
+  href?: string;
+}
+
+export interface Announcement {
+  id: string;
+  message: string;
+  instructor: string;
+  daysAgo: number;
+}

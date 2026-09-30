@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Bell, GraduationCap, Menu, Search, ShoppingCart, X } from 'lucide-react';
+import { GraduationCap, Menu, Search, ShoppingCart, X } from 'lucide-react';
 import { NavLink, useLocation } from 'react-router';
 import { primaryNav } from '../../data/navigation';
 import { useAuth } from '../../context/AuthContext';
@@ -11,6 +11,7 @@ import { IconButton, IconLink } from '../ui/IconButton';
 import { Logo } from '../ui/Logo';
 import { CategoriesMenu } from './CategoriesMenu';
 import { MobileDrawer } from './MobileDrawer';
+import { NotificationsMenu } from './NotificationsMenu';
 import { SearchBar } from './SearchBar';
 import { UserMenu } from './UserMenu';
 
@@ -132,7 +133,7 @@ export function Navbar() {
                 <IconLink href="/my-learning" icon={GraduationCap} label="My Learning" className="max-lg:hidden" />
               )}
               <IconLink href="/cart" icon={ShoppingCart} label="Cart" badge={cart.size} className="max-lg:hidden" />
-              <IconButton icon={Bell} label="Notifications, 3 unread" badge className="max-lg:hidden" />
+              <NotificationsMenu className="max-lg:hidden" />
 
               <div className="ml-2 hidden items-center gap-2 border-l border-line pl-3 lg:flex min-[1360px]:ml-3 min-[1360px]:pl-4">
                 {isAuthenticated ? (

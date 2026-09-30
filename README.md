@@ -19,15 +19,20 @@ src/
   types/               Shared domain types (Course, Category, Feature…)
   data/                All page content — courses, categories, nav/footer links, hero stats
   lib/                 Helpers: class joining, number/price formatting, Unsplash URLs, accent palette
-  context/             StoreContext: cart, wishlist, purchases, coupon, orders + toasts; AuthContext: demo sign-in
+  context/             StoreContext: cart, wishlist, purchases, coupon, orders + toasts; AuthContext: demo sign-in;
+                       LearningContext: course progress, certificates, notifications
   hooks/               useModalDialog (focus trap, Escape, scroll lock), useDocumentTitle
   pages/               Home, Courses (/courses), CourseDetails (/course/:id), Cart (/cart), Checkout (/checkout),
-                       CheckoutSuccess (/checkout/success), NotFound; protected: Dashboard, MyLearning, Profile, Settings
+                       CheckoutSuccess (/checkout/success), CoursePlayer (/learn/:courseId), NotFound
     auth/              Login (/login), Register (/register), ForgotPassword (/forgot-password)
+    dashboard/         Student area: Overview (/dashboard), MyLearning, Wishlist, Certificates (+ /certificates/:id),
+                       Achievements, Profile, Settings — all behind sign-in, in DashboardLayout
   components/
     ui/                Primitives: Button, IconButton, Badge, SectionHeader, TextLink, Reveal, SmartImage…
     layout/            Navbar (docked → floating on scroll), UserMenu, CategoriesMenu, SearchBar, MobileDrawer, Footer
     auth/              AuthShell (two-column layout), PasswordInput, SocialButtons, RouteGuards (RequireAuth, GuestOnly)
+    dashboard/         DashboardLayout + Sidebar + Header, LearningProgressCard, ProgressBar, CertificateArtwork,
+                       stat/streak/goal/achievement widgets
     course/            CourseCard, CourseGrid, CourseCarousel (+ useCarousel), FilterPills
     catalog/           Courses page: FilterPanel, FilterSheet (mobile), SortSelect, ActiveFilters, Pagination
     course-detail/     Course page: PurchaseCard, EnrollButton, MobilePurchaseBar, CurriculumAccordion, InstructorCard, ReviewsSection
@@ -72,6 +77,9 @@ on the client (`src/lib/checkout.ts`) and simulates a short processing delay bef
 
 Sign-in runs entirely in the browser — replace `src/context/AuthContext.tsx` with a real provider before launch.
 
+**Demo account:** `demo@hitswork.com` / `Demo@12345` works in any browser without registering (it's created on
+first sign-in; see `DEMO_ACCOUNT` in `src/lib/auth.ts`). The sign-in page has a "Use demo account" shortcut.
+
 - Registering stores the account in `localStorage` (`hitswork_accounts`) with a SHA-256 hash of email + password,
   never the password itself. Signing in checks against it, so wrong passwords and unknown emails are rejected.
 - The session lives in `hitswork_user` + `hitswork_authenticated`: in `localStorage` with "Remember me",
@@ -79,3 +87,23 @@ Sign-in runs entirely in the browser — replace `src/context/AuthContext.tsx` w
 - `/dashboard`, `/my-learning`, `/profile` and `/settings` redirect to `/login` and return afterwards.
   Signed-in users visiting `/login` or `/register` go to the dashboard.
 - Google/Apple buttons and password-reset emails are UI only.
+
+### Student dashboard (demo)
+
+- **Sample data.** The first time someone signs in on a browser, `data/learning.ts` seeds a learning history
+  (4 courses in progress, 6 completed with certificates) plus notifications, merged with any real purchases.
+  Every number on the dashboard is derived from that data. Settings → "Reset sample data" restores it.
+- **Storage keys:** `hitswork_learning` (progress per course), `hitswork_certificates`, `hitswork_notifications`,
+  `hitswork_cart`, `hitswork_wishlist`, `hitswork_enrolled`, `hitswork_orders`, `hitswork_coupon`.
+- **Lessons** come from `lib/lessonPlan.ts`: courses with a written curriculum use it; others get a generic
+  12-lesson outline. Lesson copy, resources and announcements live in `data/lessons.ts`.
+- **Course player** (`/learn/:courseId?lesson=<n>`, `components/player/`): a demo video player (a real playback
+  clock and controls over the course image — no streaming yet), curriculum sidebar/drawer with sequential
+  unlocking, Overview / Notes / Resources / Announcements tabs, and a completion screen. A lesson that plays to
+  the end, or "Next Lesson", marks it complete. Keyboard: Space, ←/→ (seek 10s), Shift+←/→ (lesson), F, M, Esc.
+- **Player storage:** `hitswork_lesson_progress` (resume points), `hitswork_notes`, and
+  `hitswork_course_progress` (a summary derived from `hitswork_learning`, which stays the source of truth, so the
+  dashboard, My Learning and the player always agree).
+- **Certificates** render in HTML (`CertificateArtwork`) and download as a one-page PDF generated in the browser
+  (`lib/certificatePdf.ts`, no dependencies).
+- Streak, weekly-goal and daily-activity figures are static sample values in `data/learning.ts`.

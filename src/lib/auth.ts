@@ -8,7 +8,11 @@ export interface AuthUser {
   email: string;
   /** ISO timestamp */
   joinedAt: string;
+  phone?: string;
+  country?: string;
 }
+
+export type ProfilePatch = Pick<AuthUser, 'name' | 'email'> & Partial<Pick<AuthUser, 'phone' | 'country'>>;
 
 export const MIN_PASSWORD_LENGTH = 8;
 
@@ -61,3 +65,14 @@ export async function hashPassword(email: string, password: string): Promise<str
 
 /** Simulated network latency so loading states are visible. */
 export const simulateRequest = (ms = 800) => new Promise<void>((resolve) => window.setTimeout(resolve, ms));
+
+/**
+ * Built-in demo account. It is created in the browser the first time someone signs in with it,
+ * so it works on any device without registering. Shown on the sign-in page.
+ */
+export const DEMO_ACCOUNT = {
+  name: 'Sree',
+  email: 'demo@hitswork.com',
+  password: 'Demo@12345',
+  joinedAt: '2026-09-01T09:00:00.000Z',
+} as const;

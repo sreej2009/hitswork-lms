@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 
 type Errors<T> = Partial<Record<keyof T, string>>;
 
@@ -7,6 +7,7 @@ type Errors<T> = Partial<Record<keyof T, string>>;
  * An error becomes visible once its field has been left (blurred), or for every field after a submit attempt.
  */
 export function useForm<T extends Record<string, unknown>>(initial: T, validate: (values: T) => Errors<T>) {
+  const initialRef = useRef(initial);
   const [values, setValues] = useState<T>(initial);
   const [touched, setTouched] = useState<ReadonlySet<keyof T>>(() => new Set());
   const [submitted, setSubmitted] = useState(false);
@@ -42,5 +43,12 @@ export function useForm<T extends Record<string, unknown>>(initial: T, validate:
     [errors],
   );
 
-  return { values, setValue, touch, errors, visibleErrors, attemptSubmit };
+  /** Back to the initial values with no errors showing. */
+  const reset = useCallback(() => {
+    setValues(initialRef.current);
+    setTouched(new Set());
+    setSubmitted(false);
+  }, []);
+
+  return { values, setValue, touch, errors, visibleErrors, attemptSubmit, reset };
 }
