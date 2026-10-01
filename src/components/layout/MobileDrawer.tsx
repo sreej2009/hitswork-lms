@@ -4,7 +4,7 @@ import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronDown, GraduationCap, Heart, LogOut, Search, ShoppingCart, X } from 'lucide-react';
 import { categories, categoryHref } from '../../data/categories';
-import { primaryNav } from '../../data/navigation';
+import { primaryNav, supportNav } from '../../data/navigation';
 import { useAuth } from '../../context/AuthContext';
 import { useStore } from '../../context/StoreContext';
 import { useModalDialog } from '../../hooks/useModalDialog';
@@ -16,7 +16,7 @@ import { Button } from '../ui/Button';
 import { IconButton } from '../ui/IconButton';
 import { Logo } from '../ui/Logo';
 import { easeOutSoft } from '../ui/Reveal';
-import { accountLinks, useSignOut } from './UserMenu';
+import { useAccountLinks, useSignOut } from './UserMenu';
 
 interface MobileDrawerProps {
   open: boolean;
@@ -32,6 +32,7 @@ export function MobileDrawer({ open, onClose, returnFocusRef }: MobileDrawerProp
   const { cart, wishlist, enrolled } = useStore();
   const { user, isAuthenticated } = useAuth();
   const signOut = useSignOut();
+  const drawerAccountLinks = useAccountLinks();
   const navigate = useNavigate();
 
   useModalDialog({
@@ -84,7 +85,7 @@ export function MobileDrawer({ open, onClose, returnFocusRef }: MobileDrawerProp
             className="fixed inset-y-0 right-0 z-[71] flex w-[min(88vw,380px)] flex-col bg-white shadow-2xl"
           >
             <div className="flex h-16 items-center justify-between border-b border-line px-5">
-              <Logo />
+              <Logo size="compact" />
               <IconButton ref={closeRef} icon={X} label="Close menu" onClick={onClose} className="-mr-2" />
             </div>
 
@@ -181,7 +182,7 @@ export function MobileDrawer({ open, onClose, returnFocusRef }: MobileDrawerProp
               <ul className="space-y-0.5" aria-label="Your account">
                 {[
                   ...(isAuthenticated
-                    ? accountLinks.map((link) => ({ ...link, count: link.href === '/my-learning' ? enrolled.size : 0 }))
+                    ? drawerAccountLinks.map((link) => ({ ...link, count: link.href === '/my-learning' ? enrolled.size : 0 }))
                     : [{ label: 'My Learning', href: '/my-learning', icon: GraduationCap, count: enrolled.size }]),
                   { label: 'My Cart', href: '/cart', icon: ShoppingCart, count: cart.size },
                   { label: 'Wishlist', href: isAuthenticated ? '/wishlist' : '/cart', icon: Heart, count: wishlist.size },
@@ -198,6 +199,18 @@ export function MobileDrawer({ open, onClose, returnFocusRef }: MobileDrawerProp
                         </span>
                       )}
                     </AppLink>
+                  </li>
+                ))}
+              </ul>
+
+              <div className="mx-3 my-4 h-px bg-line" />
+
+              <ul className="space-y-0.5" aria-label="About and support">
+                {supportNav.map((link) => (
+                  <li key={link.href}>
+                    <NavLink to={link.href} onClick={onClose} className={navLinkClass}>
+                      {link.label}
+                    </NavLink>
                   </li>
                 ))}
               </ul>

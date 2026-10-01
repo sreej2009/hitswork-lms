@@ -59,3 +59,17 @@ export function formatClock(totalSeconds: number): string {
   const sec = String(s % 60).padStart(2, '0');
   return h ? `${h}:${String(m).padStart(2, '0')}:${sec}` : `${String(m).padStart(2, '0')}:${sec}`;
 }
+
+const compactPrice = new Intl.NumberFormat('en-IN', {
+  notation: 'compact',
+  style: 'currency',
+  currency: 'INR',
+  maximumFractionDigits: 1,
+});
+
+/** 248500 → "₹2.5L", 24000 → "₹24K" (chart axes and tight spaces) */
+export const formatPriceCompact = (value: number) => compactPrice.format(value);
+
+/** 0.124 → "+12.4%", -0.03 → "−3%" */
+export const formatChange = (percent: number) =>
+  `${percent >= 0 ? '+' : '−'}${Math.abs(percent).toFixed(Math.abs(percent) % 1 ? 1 : 0)}%`;

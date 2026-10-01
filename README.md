@@ -19,23 +19,31 @@ src/
   types/               Shared domain types (Course, Category, Feature…)
   data/                All page content — courses, categories, nav/footer links, hero stats
   lib/                 Helpers: class joining, number/price formatting, Unsplash URLs, accent palette
-  context/             StoreContext: cart, wishlist, purchases, coupon, orders + toasts; AuthContext: demo sign-in;
+  context/             InstructorContext: instructor profile, courses and notifications (per account);
+                       StoreContext: cart, wishlist, purchases, coupon, orders + toasts; AuthContext: demo sign-in;
                        LearningContext: course progress, certificates, notifications
   hooks/               useModalDialog (focus trap, Escape, scroll lock), useDocumentTitle, usePageMeta (title + description)
   pages/               Home, Courses (/courses), CourseDetails (/course/:id), Cart (/cart), Checkout (/checkout),
                        CheckoutSuccess (/checkout/success), CoursePlayer (/learn/:courseId), NotFound
     auth/              Login (/login), Register (/register), ForgotPassword (/forgot-password)
+    instructor/        Instructor area: Overview (/instructor), Courses, Students, Analytics, Earnings, Profile,
+                       Create/Edit course basics (/instructor/course/create, /instructor/course/:id/edit)
+    InstructorPublicPage  Public instructor profile (/instructors/:slug)
+    info/              About (/about), Contact (/contact) and Help Center (/help; /support redirects there)
     teach/             Teach on Hitswork (/teach) and the instructor application (/teach/register)
     business/          Hitswork for Business (/business) and the demo request form (/business/contact)
     dashboard/         Student area: Overview (/dashboard), MyLearning, Wishlist, Certificates (+ /certificates/:id),
                        Achievements, Profile, Settings — all behind sign-in, in DashboardLayout
   components/
     ui/                Primitives: Button, IconButton, Badge, SectionHeader, TextLink, Reveal, SmartImage, Floating,
-                       FaqAccordion, CountUp, SubmissionSuccess, Form controls (TextInput, SelectInput, TextArea…)
+                       FaqAccordion, CountUp, SubmissionSuccess, StatsStrip, ProcessSteps, GradientCTA, Form controls (TextInput, SelectInput, TextArea…)
     layout/            Navbar (docked → floating on scroll), UserMenu, CategoriesMenu, SearchBar, MobileDrawer, Footer
     auth/              AuthShell (two-column layout), PasswordInput, SocialButtons, RouteGuards (RequireAuth, GuestOnly)
-    dashboard/         DashboardLayout + Sidebar + Header, LearningProgressCard, ProgressBar, CertificateArtwork,
+    dashboard/         DashboardLayout (takes any sidebar) + SidebarNav + Header (slots for notifications/menu), LearningProgressCard, ProgressBar, CertificateArtwork,
                        stat/streak/goal/achievement widgets
+    instructor/        InstructorSidebar/Header, RequireInstructor (+ onboarding), CourseList (table ↔ cards),
+                       MetricCard, StudentDrawer, PayoutDialog, InstructorProfileCard
+    charts/            AreaChart and BarChart (SVG/HTML, hover tooltips, screen-reader tables) — no chart library
     course/            CourseCard, CourseGrid, CourseCarousel (+ useCarousel), FilterPills
     catalog/           Courses page: FilterPanel, FilterSheet (mobile), SortSelect, ActiveFilters, Pagination
     course-detail/     Course page: PurchaseCard, EnrollButton, MobilePurchaseBar, CurriculumAccordion, InstructorCard, ReviewsSection
@@ -45,7 +53,7 @@ src/
     feature/           FeatureCard
     icons/             Brand social icons (Lucide no longer ships these)
   sections/            One file per homepage section, composed in pages/HomePage.tsx;
-    teach/, business/  Sections for the instructor and business landing pages
+    teach/, business/, about/  Sections for the instructor, business and about pages
 ```
 
 Content lives in `src/data`, so the copy, courses and links can change without touching components.
@@ -125,3 +133,68 @@ first sign-in; see `DEMO_ACCOUNT` in `src/lib/auth.ts`). The sign-in page has a 
 - Nothing is sent anywhere yet — connect a CRM or email service in those two lib files.
 - Dashboard previews, team table, revenue and analytics charts use sample data defined in `data/teach.ts` and
   `data/business.ts`; company names, testimonials and figures are fictional and labelled as such on the page.
+
+### About, Contact & Help Center (demo)
+
+- `/help` searches the articles in `data/help.ts` on the client (`lib/helpSearch.ts`): every word must match, and
+  matches in the question or keywords rank above passing mentions in an answer. The search text (`?q=`) and the
+  selected topic (`?category=`) live in the URL, so results can be linked to directly.
+- `/contact` validates on the client (`lib/supportMessage.ts`) and stores the message in `localStorage`
+  (`hitswork_support_ticket`) with a ticket number such as `HIT-SUP-2026-4821`. Nothing is emailed yet.
+- The contact addresses (`data/support.ts`) are example addresses and are labelled as such on the page.
+- About page figures are labelled as platform highlights for the demo; the story makes no claims about company history.
+
+### Instructor dashboard (demo)
+
+- **Instructor sign-in:** `/instructor/login` (or `/login?as=instructor`, or the "I’m an Instructor" switch on the
+  sign-in page) lands on `/instructor` after signing in. **Demo instructor:** `instructor@hitswork.com` /
+  `Teach@12345` (created on first sign-in, like the demo learner).
+- `/instructor/*` requires sign-in. Accounts without instructor status see an onboarding screen: apply via
+  Teach on Hitswork, or start the demo dashboard straight away. The demo account (`demo@hitswork.com`) is an
+  instructor out of the box.
+- **Storage** (each a map keyed by account email): `hitswork_instructor` (profile + payout settings; its presence
+  means instructor status), `hitswork_instructor_courses`, `hitswork_instructor_notifications`.
+- Courses can be created (as drafts), edited, submitted for review, duplicated and deleted. Status, search and sort
+  on My Courses live in the URL. Revenue, rating and published counts are derived from the courses.
+- Students, analytics series, activity and transactions are read-only sample data in `data/instructor.ts`
+  (types in `types/instructor.ts`) and every page that shows them carries a "Sample data" badge.
+- Payout settings are a demo form: only the last four digits of an account number are stored and nothing is paid.
+
+### Course builder (demo)
+
+- Full-screen builder at `/instructor/course/create` and `/instructor/course/:id/edit` (same component), with a
+  learner-style preview at `/instructor/course/:id/preview` that reuses `CourseDetailsView` from the Course
+  Details page (purchasing disabled).
+- Steps (in the URL as `?step=`): Basic Information · Curriculum · Pricing · Settings · Preview. A checklist
+  drives the progress %, and Submit for Review is blocked until title, subtitle, description, category, level,
+  thumbnail, ≥1 section, ≥1 lesson and a valid price are in place.
+- **Autosave:** edits are written ~0.8 s after you stop typing (`hooks/useCourseDraft.ts`), into the existing
+  `hitswork_instructor_courses` store. A new course is stored on its first edit, then the URL switches to `/edit`.
+- **Data model:** `InstructorCourse` gained optional builder fields (`subtitle`, `description` (sanitised HTML),
+  `sections → lessons`, pricing, promotion, `settings`…) — see `types/instructor.ts`. Logic lives in
+  `lib/courseBuilder.ts` (checklist, validation, preview conversion).
+- **Media:** thumbnails are resized to 1280×720 JPEG and stored with the draft. Video and file uploads are
+  simulated (`lib/courseMedia.ts` — replace `uploadFile` with a real API); only metadata is saved, so video
+  previews last for the browser session.
+- Curriculum: drag sections and lessons (native HTML5 drag & drop, including between sections) or use the arrow
+  buttons on touch screens. Lesson types: video, article (rich text), quiz, assignment, resource.
+- Builder courses never reach the public catalog: `/courses` only lists catalog courses, and drafts or courses in
+  review stay in the instructor area.
+
+### Admin panel (demo)
+
+- **Sign in:** `/admin/login` with `admin@hitswork.com` / `Admin@12345`. Only this account has the admin role;
+  anyone else opening `/admin/*` is sent to `/dashboard`, and the "Admin Panel" menu link is only shown to the admin.
+- **Pages:** Overview, Courses, Pending Reviews, Course Review (`/admin/courses/:id/review`), Instructors (+ detail
+  and applications), Students (+ detail), Categories, Orders, Reports (CSV export), Settings. Global search in the
+  header covers courses, students, instructors and orders.
+- **Data:** types in `types/admin.ts`, sample data in `data/admin.ts`, state in `context/AdminContext.tsx`, storage in
+  `lib/adminStorage.ts` (`hitswork_admin`, `hitswork_admin_courses`, `_instructors`, `_students`, `_orders`,
+  `_categories`, `_notifications`, `_applications`). Platform totals are sample figures and labelled as such.
+- **Review loop:** courses submitted in the course builder appear in Pending Reviews. Approve → Published (shown in
+  `/courses` and at `/course/:id`); Request Changes / Reject (reason required) → the instructor sees the status and
+  feedback in their dashboard and builder, edits and resubmits. With "Require Course Approval" turned off in
+  Settings, submissions publish immediately.
+- **Public visibility** is decided in one place, `lib/publicCatalog.ts`: catalog courses unless unpublished or deleted
+  by an admin, plus approved builder courses. Drafts, pending and rejected courses never appear publicly.
+- Messages, refunds and payouts are simulated; nothing is sent or charged.

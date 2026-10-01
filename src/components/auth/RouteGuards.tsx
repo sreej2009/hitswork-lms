@@ -1,10 +1,16 @@
 import { Navigate, Outlet, useLocation, type Location } from 'react-router';
 import { useAuth } from '../../context/AuthContext';
 
-/** Where to send the user after signing in: the page they were blocked from, else the dashboard. */
+/**
+ * Where to send the user after signing in: the page they were blocked from, else the instructor
+ * dashboard for an instructor sign-in (`/login?as=instructor`), else the learner dashboard.
+ */
 export function useReturnPath(): string {
-  const from = (useLocation().state as { from?: Location } | null)?.from;
-  return from ? `${from.pathname}${from.search}${from.hash}` : '/dashboard';
+  const location = useLocation();
+  const from = (location.state as { from?: Location } | null)?.from;
+  if (from) return `${from.pathname}${from.search}${from.hash}`;
+  const as = new URLSearchParams(location.search).get('as');
+  return as === 'instructor' ? '/instructor' : as === 'admin' ? '/admin' : '/dashboard';
 }
 
 /** Protected pages: signed-out visitors go to /login and come back afterwards. */

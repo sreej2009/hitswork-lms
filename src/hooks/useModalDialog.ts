@@ -1,4 +1,4 @@
-import { useEffect, type RefObject } from 'react';
+import { useEffect, useRef, type RefObject } from 'react';
 
 const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), select, [tabindex]:not([tabindex="-1"])';
 
@@ -24,6 +24,11 @@ export function useModalDialog({
   returnFocusRef,
   closeWhenMatches,
 }: ModalDialogOptions) {
+  // Read through a ref so a new onClose function on every parent render doesn't re-run the effect
+  // (which would steal focus from whatever the user is typing in).
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+
   useEffect(() => {
     if (!open) return;
     const returnTo = returnFocusRef?.current;
@@ -32,7 +37,7 @@ export function useModalDialog({
     initialFocusRef.current?.focus();
 
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose();
+      if (event.key === 'Escape') onCloseRef.current();
       if (event.key !== 'Tab' || !panelRef.current) return;
       const nodes = panelRef.current.querySelectorAll<HTMLElement>(FOCUSABLE);
       const first = nodes[0];
@@ -48,7 +53,7 @@ export function useModalDialog({
 
     const query = closeWhenMatches ? window.matchMedia(closeWhenMatches) : null;
     const onQueryChange = () => {
-      if (query?.matches) onClose();
+      if (query?.matches) onCloseRef.current();
     };
 
     document.addEventListener('keydown', onKeyDown);
@@ -59,5 +64,5 @@ export function useModalDialog({
       query?.removeEventListener('change', onQueryChange);
       returnTo?.focus();
     };
-  }, [open, onClose, panelRef, initialFocusRef, returnFocusRef, closeWhenMatches]);
+  }, [open, panelRef, initialFocusRef, returnFocusRef, closeWhenMatches]);
 }

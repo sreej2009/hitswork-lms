@@ -22,6 +22,11 @@ interface SubmissionSuccessProps {
   /** Text for the link that clears the stored submission */
   resetLabel: string;
   onReset: () => void;
+  /** Shown after the title; `null` hides it */
+  emoji?: string | null;
+  backLabel?: string;
+  /** Optional second button, e.g. "Open Instructor Dashboard" */
+  secondaryAction?: { label: string; href: string };
 }
 
 /** Confirmation screen for demo form submissions (instructor applications, business enquiries). */
@@ -34,6 +39,9 @@ export function SubmissionSuccess({
   note,
   resetLabel,
   onReset,
+  emoji = '🎉',
+  backLabel = 'Back to Hitswork',
+  secondaryAction,
 }: SubmissionSuccessProps) {
   const [copied, setCopied] = useState(false);
 
@@ -73,7 +81,8 @@ export function SubmissionSuccess({
             transition={{ duration: 0.6, delay: 0.2, ease: easeOutSoft }}
           >
             <h1 className="mt-9 text-[2rem] leading-tight font-extrabold tracking-[-0.03em] sm:text-[2.75rem]">
-              {title} <span aria-hidden>🎉</span>
+              {title}
+              {emoji && <span aria-hidden> {emoji}</span>}
             </h1>
             <p className="mx-auto mt-3 max-w-lg text-[17px] leading-relaxed text-body">{message}</p>
 
@@ -115,9 +124,22 @@ export function SubmissionSuccess({
             </div>
 
             <div className="mt-8 flex flex-col items-center gap-4">
-              <Button href="/" size="lg" arrow className="max-sm:w-full">
-                Back to Hitswork
-              </Button>
+              <div className="flex w-full flex-col justify-center gap-3 sm:w-auto sm:flex-row">
+                {secondaryAction && (
+                  <Button href={secondaryAction.href} size="lg" arrow className="max-sm:w-full">
+                    {secondaryAction.label}
+                  </Button>
+                )}
+                <Button
+                  href="/"
+                  size="lg"
+                  variant={secondaryAction ? 'secondary' : 'primary'}
+                  arrow={!secondaryAction}
+                  className="max-sm:w-full"
+                >
+                  {backLabel}
+                </Button>
+              </div>
               <button
                 type="button"
                 onClick={onReset}

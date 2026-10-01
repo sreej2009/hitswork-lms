@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type ComponentType } from 'react';
 import { createPortal } from 'react-dom';
 import { Outlet, useLocation } from 'react-router';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -9,6 +9,7 @@ import { cn } from '../../lib/cn';
 import { IconButton } from '../ui/IconButton';
 import { easeOutSoft } from '../ui/Reveal';
 import { DashboardSidebar } from './DashboardSidebar';
+import type { ShellSidebarProps } from './SidebarNav';
 
 interface DashboardUI {
   openSidebar: () => void;
@@ -26,7 +27,15 @@ export function useDashboardUI(): DashboardUI {
 
 const COLLAPSED_KEY = 'hitswork_sidebar_collapsed';
 
-function MobileSidebar({ open, onClose, returnFocus }: { open: boolean; onClose: () => void; returnFocus: HTMLButtonElement | null }) {
+interface MobileSidebarProps {
+  open: boolean;
+  onClose: () => void;
+  returnFocus: HTMLButtonElement | null;
+  Sidebar: ComponentType<ShellSidebarProps>;
+  label: string;
+}
+
+function MobileSidebar({ open, onClose, returnFocus, Sidebar, label }: MobileSidebarProps) {
   const panelRef = useRef<HTMLDivElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
   const returnFocusRef = useRef<HTMLElement | null>(null);
@@ -52,7 +61,7 @@ function MobileSidebar({ open, onClose, returnFocus }: { open: boolean; onClose:
             ref={panelRef}
             role="dialog"
             aria-modal="true"
-            aria-label="Dashboard menu"
+            aria-label={`${label} menu`}
             initial={{ x: '-100%' }}
             animate={{ x: 0 }}
             exit={{ x: '-100%' }}
@@ -62,7 +71,7 @@ function MobileSidebar({ open, onClose, returnFocus }: { open: boolean; onClose:
             <span className="absolute top-4 right-3 z-10">
               <IconButton ref={closeRef} icon={X} label="Close menu" onClick={onClose} />
             </span>
-            <DashboardSidebar collapsed={false} onNavigate={onClose} />
+            <Sidebar collapsed={false} onNavigate={onClose} />
           </motion.div>
         </>
       )}
@@ -71,8 +80,15 @@ function MobileSidebar({ open, onClose, returnFocus }: { open: boolean; onClose:
   );
 }
 
-/** Student area shell: sidebar (full, rail or drawer) + animated page content. */
-export function DashboardLayout() {
+interface DashboardLayoutProps {
+  /** Navigation for this area; the student sidebar by default */
+  sidebar?: ComponentType<ShellSidebarProps>;
+  /** Accessible name of the sidebar landmark */
+  label?: string;
+}
+
+/** Dashboard shell (student and instructor areas): sidebar (full, rail or drawer) + animated page content. */
+export function DashboardLayout({ sidebar: Sidebar = DashboardSidebar, label = 'Student area' }: DashboardLayoutProps) {
   const location = useLocation();
   const isDesktop = useMediaQuery('(min-width: 64rem)');
   const [collapsedPreference, setCollapsedPreference] = useState(() => {
@@ -113,13 +129,13 @@ export function DashboardLayout() {
         </a>
 
         <aside
-          aria-label="Student area"
+          aria-label={label}
           className={cn(
             'fixed inset-y-0 left-0 z-40 hidden border-r border-line bg-white transition-[width] duration-300 ease-out-soft md:block',
             collapsed ? 'w-[76px]' : 'w-64',
           )}
         >
-          <DashboardSidebar collapsed={collapsed} onToggleCollapsed={isDesktop ? toggleCollapsed : undefined} />
+          <Sidebar collapsed={collapsed} onToggleCollapsed={isDesktop ? toggleCollapsed : undefined} />
         </aside>
 
         <div className={cn('transition-[padding] duration-300 ease-out-soft', collapsed ? 'md:pl-[76px]' : 'md:pl-64')}>
@@ -135,7 +151,7 @@ export function DashboardLayout() {
           </main>
         </div>
 
-        <MobileSidebar open={drawerOpen} onClose={closeDrawer} returnFocus={menuButton} />
+        <MobileSidebar open={drawerOpen} onClose={closeDrawer} returnFocus={menuButton} Sidebar={Sidebar} label={label} />
       </div>
     </DashboardUIContext.Provider>
   );

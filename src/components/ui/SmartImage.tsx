@@ -39,6 +39,9 @@ export function SmartImage({
     if (ref.current?.complete && ref.current.naturalWidth > 0) setLoaded(true);
   }, []);
 
+  // Uploaded images (data/blob URLs) are used as-is; everything else is an Unsplash photo id.
+  const direct = /^(data:|blob:|https?:)/.test(photoId);
+
   if (failed) {
     return <div role="img" aria-label={alt} className={cn('bg-linear-to-br from-brand-50 to-grape-100', className)} />;
   }
@@ -46,8 +49,8 @@ export function SmartImage({
   return (
     <img
       ref={ref}
-      src={unsplash(photoId, { width, height: ratio ? Math.round(width / ratio) : undefined, crop })}
-      srcSet={widths ? unsplashSrcSet(photoId, widths, ratio, crop) : undefined}
+      src={direct ? photoId : unsplash(photoId, { width, height: ratio ? Math.round(width / ratio) : undefined, crop })}
+      srcSet={!direct && widths ? unsplashSrcSet(photoId, widths, ratio, crop) : undefined}
       sizes={sizes}
       alt={alt}
       width={width}

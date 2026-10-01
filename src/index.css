@@ -133,3 +133,42 @@
     cursor: pointer;
   }
 }
+
+/* ------------------------------------------------------------------ */
+/*  Rich text written in the course builder (editor + course pages)    */
+/* ------------------------------------------------------------------ */
+@layer components {
+  .rich-text > * + * {
+    margin-top: 0.85em;
+  }
+  .rich-text h2 {
+    @apply font-display text-xl font-bold tracking-[-0.01em] text-ink;
+  }
+  .rich-text h3 {
+    @apply font-display text-lg font-bold text-ink;
+  }
+  .rich-text strong {
+    @apply font-semibold text-ink;
+  }
+  .rich-text ul {
+    @apply list-disc space-y-1 pl-6;
+  }
+  .rich-text ol {
+    @apply list-decimal space-y-1 pl-6;
+  }
+  .rich-text a {
+    @apply font-medium text-brand-600 underline underline-offset-2;
+  }
+  .rich-text pre {
+    @apply overflow-x-auto rounded-xl bg-night p-4 font-mono text-[13px] leading-relaxed text-slate-100;
+  }
+  .rich-text code {
+    @apply rounded bg-canvas px-1 py-0.5 font-mono text-[0.9em] text-ink ring-1 ring-line;
+  }
+  .rich-text pre code {
+    @apply bg-transparent p-0 text-inherit ring-0;
+  }
+  .rich-text blockquote {
+    @apply border-l-4 border-brand-200 pl-4 text-muted italic;
+  }
+}

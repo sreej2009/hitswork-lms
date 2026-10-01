@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
 import { AlertCircle } from 'lucide-react';
 import type { Course } from '../types';
-import { courses } from '../data/courses';
+import { findPublicCourse } from '../lib/publicCatalog';
 import { useStore } from '../context/StoreContext';
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
 import {
@@ -39,7 +39,7 @@ export function CheckoutPage() {
   const items = useMemo<Course[]>(() => {
     const ids = buyNowId ? [buyNowId] : [...cart];
     return ids.flatMap((id) => {
-      const course = courses.find((c) => c.id === id);
+      const course = findPublicCourse(id)?.course;
       return course && !enrolled.has(id) ? [course] : [];
     });
   }, [buyNowId, cart, enrolled]);

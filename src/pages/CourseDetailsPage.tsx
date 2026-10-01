@@ -13,11 +13,12 @@ import {
   SearchX,
   Users,
 } from 'lucide-react';
-import type { Course, CourseDetail } from '../types';
+import type { Course, CourseDetail, InstructorProfile } from '../types';
 import { categoryHref } from '../data/categories';
 import { useStore } from '../context/StoreContext';
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
-import { categoryIdFor, getCourse, relatedCourses } from '../lib/courseDetail';
+import { categoryIdFor, relatedCourses } from '../lib/courseDetail';
+import { findPublicCourse } from '../lib/publicCatalog';
 import { accents } from '../lib/accents';
 import { accentForCategory } from '../data/categories';
 import { cn } from '../lib/cn';
@@ -140,13 +141,19 @@ function HeroContent({ course, detail }: { course: Course; detail: CourseDetail 
       <p className="mt-4 max-w-2xl text-base leading-relaxed text-slate-300 sm:text-lg">{tagline}</p>
 
       <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
-        <span className="flex items-center gap-2">
-          <span className="font-bold text-amber-300">{course.rating.toFixed(1)}</span>
-          <RatingStars rating={course.rating} size={16} />
-          <a href="#reviews" className="text-brand-200 underline-offset-4 hover:underline">
-            ({formatNumber(course.reviews)} ratings)
-          </a>
-        </span>
+        {course.reviews > 0 ? (
+          <span className="flex items-center gap-2">
+            <span className="font-bold text-amber-300">{course.rating.toFixed(1)}</span>
+            <RatingStars rating={course.rating} size={16} />
+            <a href="#reviews" className="text-brand-200 underline-offset-4 hover:underline">
+              ({formatNumber(course.reviews)} ratings)
+            </a>
+          </span>
+        ) : (
+          <span className="rounded-full bg-white/10 px-2.5 py-1 text-xs font-semibold text-brand-200 ring-1 ring-white/15">
+            New course · No ratings yet
+          </span>
+        )}
         <span className="flex items-center gap-1.5">
           <Users aria-hidden className="size-4 text-slate-400" strokeWidth={2} />
           {formatCompact(course.students)} students
@@ -168,7 +175,10 @@ function HeroContent({ course, detail }: { course: Course; detail: CourseDetail 
       <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
         <p>
           Created by{' '}
-          <a href="#instructor" className="font-semibold text-brand-200 underline-offset-4 hover:text-white hover:underline">
+          <a
+            href="#instructor"
+            className="font-semibold text-brand-200 underline-offset-4 hover:text-white hover:underline"
+          >
             {course.instructor}
           </a>
         </p>
@@ -245,13 +255,36 @@ function CourseNotFound() {
 
 export function CourseDetailsPage() {
   const { id } = useParams();
-  const result = getCourse(id);
+  // Only courses visible to learners (catalog courses not unpublished, approved builder courses).
+  const result = findPublicCourse(id);
   useDocumentTitle(result ? `${result.course.title} — Hitswork` : 'Course not found — Hitswork');
-  const inlineCardRef = useRef<HTMLDivElement>(null);
-
   if (!result) return <CourseNotFound />;
-  const { course, detail } = result;
-  const related = relatedCourses(course);
+  // Newly approved builder courses render like a preview: enrollment opens once they join the store.
+  return <CourseDetailsView course={result.course} detail={result.detail} preview={result.builder} />;
+}
+
+/** Options for rendering a course that isn't in the catalog yet (instructor preview). */
+export interface CoursePreviewOptions {
+  /** Sanitised HTML description from the course builder */
+  descriptionHtml: string;
+  instructor: InstructorProfile;
+}
+
+/**
+ * The learner-facing course page. The instructor preview renders the same view with `preview` set:
+ * purchasing is disabled and catalog-only extras (related courses, reviews) become placeholders.
+ */
+export function CourseDetailsView({
+  course,
+  detail,
+  preview,
+}: {
+  course: Course;
+  detail: CourseDetail | null;
+  preview?: CoursePreviewOptions;
+}) {
+  const inlineCardRef = useRef<HTMLDivElement>(null);
+  const related = preview ? [] : relatedCourses(course);
 
   return (
     <>
@@ -270,92 +303,132 @@ export function CourseDetailsPage() {
             <HeroContent course={course} detail={detail} />
           </div>
 
-          <aside aria-label="Purchase options" className="relative col-start-2 row-span-2 row-start-1 hidden pt-10 pb-16 lg:block">
+          <aside
+            aria-label="Purchase options"
+            className="relative col-start-2 row-span-2 row-start-1 hidden pt-10 pb-16 lg:block"
+          >
             <div className="sticky top-24">
-              <PurchaseCard course={course} variant="sidebar" />
+              {preview ? (
+                <div inert className="select-none">
+                  <PurchaseCard course={course} variant="sidebar" />
+                </div>
+              ) : (
+                <PurchaseCard course={course} variant="sidebar" />
+              )}
             </div>
           </aside>
 
           <div className="col-start-1 row-start-2 min-w-0 space-y-14 pt-8 pb-16 sm:pt-10 lg:pt-12 lg:pb-20">
             <div className="lg:hidden">
-              <PurchaseCard ref={inlineCardRef} course={course} variant="inline" />
+              {preview ? (
+                <div inert className="select-none">
+                  <PurchaseCard course={course} variant="inline" />
+                </div>
+              ) : (
+                <PurchaseCard ref={inlineCardRef} course={course} variant="inline" />
+              )}
             </div>
 
             {detail && (
               <>
-                <DetailSection id="learn" title="What you'll learn">
-                  <div className="rounded-2xl border border-line bg-white p-6 shadow-card sm:p-7">
-                    <ul className="grid gap-x-8 gap-y-3.5 sm:grid-cols-2">
-                      {detail.learn.map((item) => (
-                        <li key={item} className="flex gap-3 text-[15px] leading-snug text-body">
-                          <span className="mt-px grid size-5 shrink-0 place-items-center rounded-full bg-brand-50 text-brand-600">
-                            <Check aria-hidden className="size-3.5" strokeWidth={3} />
-                          </span>
-                          {item}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </DetailSection>
+                {detail.learn.length > 0 && (
+                  <DetailSection id="learn" title="What you'll learn">
+                    <div className="rounded-2xl border border-line bg-white p-6 shadow-card sm:p-7">
+                      <ul className="grid gap-x-8 gap-y-3.5 sm:grid-cols-2">
+                        {detail.learn.map((item) => (
+                          <li key={item} className="flex gap-3 text-[15px] leading-snug text-body">
+                            <span className="mt-px grid size-5 shrink-0 place-items-center rounded-full bg-brand-50 text-brand-600">
+                              <Check aria-hidden className="size-3.5" strokeWidth={3} />
+                            </span>
+                            {item}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </DetailSection>
+                )}
 
                 <DetailSection id="curriculum" title="Course Content">
                   <CurriculumAccordion sections={detail.curriculum} totals={detail.totals} totalHours={course.hours} />
                 </DetailSection>
 
-                <DetailSection id="requirements" title="Requirements">
-                  <BulletList items={detail.requirements} />
-                </DetailSection>
+                {detail.requirements.length > 0 && (
+                  <DetailSection id="requirements" title="Requirements">
+                    <BulletList items={detail.requirements} />
+                  </DetailSection>
+                )}
 
                 <DetailSection id="description" title="Course Description">
-                  <div className="space-y-4 text-[15.5px] leading-[1.75] text-body">
-                    {detail.description.map((paragraph) => (
-                      <p key={paragraph.slice(0, 24)}>{paragraph}</p>
-                    ))}
-                  </div>
+                  {preview ? (
+                    <div
+                      className="rich-text text-[15.5px] leading-[1.75] text-body"
+                      // Sanitised by the course builder before it is stored.
+                      dangerouslySetInnerHTML={{ __html: preview.descriptionHtml }}
+                    />
+                  ) : (
+                    <div className="space-y-4 text-[15.5px] leading-[1.75] text-body">
+                      {detail.description.map((paragraph) => (
+                        <p key={paragraph.slice(0, 24)}>{paragraph}</p>
+                      ))}
+                    </div>
+                  )}
                 </DetailSection>
 
-                <DetailSection id="audience" title="Who this course is for">
-                  <div className="rounded-2xl border border-brand-100 bg-linear-to-br from-brand-50/80 via-white to-grape-50/80 p-6 sm:p-7">
-                    <p className="text-sm font-semibold text-ink">This course is for:</p>
-                    <div className="mt-4">
-                      <BulletList items={detail.audience} />
+                {detail.audience.length > 0 && (
+                  <DetailSection id="audience" title="Who this course is for">
+                    <div className="rounded-2xl border border-brand-100 bg-linear-to-br from-brand-50/80 via-white to-grape-50/80 p-6 sm:p-7">
+                      <p className="text-sm font-semibold text-ink">This course is for:</p>
+                      <div className="mt-4">
+                        <BulletList items={detail.audience} />
+                      </div>
                     </div>
-                  </div>
-                </DetailSection>
+                  </DetailSection>
+                )}
               </>
             )}
 
             <DetailSection id="instructor" title="Instructor">
-              <InstructorCard name={course.instructor} />
+              <InstructorCard name={course.instructor} profile={preview?.instructor} />
             </DetailSection>
 
             <DetailSection id="reviews" title="Student Reviews">
-              <ReviewsSection course={course} reviews={detail?.reviews ?? []} />
+              {preview ? (
+                <div className="rounded-2xl border border-dashed border-line-strong bg-white px-6 py-10 text-center">
+                  <p className="font-semibold text-ink">No reviews yet</p>
+                  <p className="mt-1 text-sm text-muted">
+                    Student reviews appear here once learners enroll and rate the course.
+                  </p>
+                </div>
+              ) : (
+                <ReviewsSection course={course} reviews={detail?.reviews ?? []} />
+              )}
             </DetailSection>
           </div>
         </div>
       </Container>
 
-      <section aria-labelledby="related-title" className="border-t border-line bg-canvas py-16 sm:py-20">
-        <Container>
-          <Reveal>
-            <SectionHeader
-              id="related-title"
-              title="Students Also Bought"
-              action={
-                <TextLink href={categoryIdFor(course) ? categoryHref(categoryIdFor(course)!) : '/courses'}>
-                  View All
-                </TextLink>
-              }
-            />
-          </Reveal>
-          <Reveal delay={0.05} className="mt-8">
-            <CourseGrid courses={related} />
-          </Reveal>
-        </Container>
-      </section>
+      {!preview && (
+        <section aria-labelledby="related-title" className="border-t border-line bg-canvas py-16 sm:py-20">
+          <Container>
+            <Reveal>
+              <SectionHeader
+                id="related-title"
+                title="Students Also Bought"
+                action={
+                  <TextLink href={categoryIdFor(course) ? categoryHref(categoryIdFor(course)!) : '/courses'}>
+                    View All
+                  </TextLink>
+                }
+              />
+            </Reveal>
+            <Reveal delay={0.05} className="mt-8">
+              <CourseGrid courses={related} />
+            </Reveal>
+          </Container>
+        </section>
+      )}
 
-      <MobilePurchaseBar course={course} cardRef={inlineCardRef} />
+      {!preview && <MobilePurchaseBar course={course} cardRef={inlineCardRef} />}
     </>
   );
 }

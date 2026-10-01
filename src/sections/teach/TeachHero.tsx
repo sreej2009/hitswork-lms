@@ -3,6 +3,7 @@ import { motion, type Variants } from 'framer-motion';
 import { CircleCheck, IndianRupee, Star, Users, Video } from 'lucide-react';
 import { teachHeroImage } from '../../data/teach';
 import { cn } from '../../lib/cn';
+import { AppLink } from '../../components/ui/AppLink';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { Container } from '../../components/ui/Container';
@@ -180,9 +181,16 @@ export function TeachHero() {
             </Button>
           </motion.div>
 
+          <motion.p variants={itemVariants} className="mt-5 text-sm text-body">
+            Already teaching on Hitswork?{' '}
+            <AppLink href="/instructor/login" className="font-semibold text-brand-600 hover:text-brand-700">
+              Instructor sign in
+            </AppLink>
+          </motion.p>
+
           <motion.p
             variants={itemVariants}
-            className="mt-8 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-muted"
+            className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-muted"
           >
             {['Free to publish', 'No monthly fees', 'Keep full ownership'].map((point) => (
               <span key={point} className="inline-flex items-center gap-1.5">

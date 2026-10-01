@@ -85,7 +85,7 @@ export function Navbar() {
               scrolled ? 'pr-3 pl-4 sm:pr-4 sm:pl-5 lg:pl-6' : 'px-4 sm:px-6 lg:px-8',
             )}
           >
-            <Logo />
+            <Logo size="compact" />
 
             <nav aria-label="Primary" className="ml-1 hidden items-center gap-0.5 xl:flex min-[1360px]:ml-2">
               <CategoriesMenu />

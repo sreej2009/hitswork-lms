@@ -76,3 +76,27 @@ export const DEMO_ACCOUNT = {
   password: 'Demo@12345',
   joinedAt: '2026-09-01T09:00:00.000Z',
 } as const;
+
+/** Built-in demo instructor: signs straight into the instructor dashboard. Created on first sign-in, like the demo learner. */
+export const DEMO_INSTRUCTOR = {
+  name: 'Sree',
+  email: 'instructor@hitswork.com',
+  password: 'Teach@12345',
+  joinedAt: '2025-08-12T09:00:00.000Z',
+} as const;
+
+/** Built-in demo administrator: the only account that can open /admin. */
+export const DEMO_ADMIN = {
+  name: 'Admin',
+  email: 'admin@hitswork.com',
+  password: 'Admin@12345',
+  joinedAt: '2025-01-15T09:00:00.000Z',
+} as const;
+
+const demoAccounts = [DEMO_ACCOUNT, DEMO_INSTRUCTOR, DEMO_ADMIN];
+
+/** Admin access. In this demo only the built-in admin account has the admin role. */
+export const isAdminEmail = (email: string | undefined) => !!email && normaliseEmail(email) === DEMO_ADMIN.email;
+
+/** The built-in demo account for an email, if it is one. */
+export const findDemoAccount = (email: string) => demoAccounts.find((account) => account.email === email);

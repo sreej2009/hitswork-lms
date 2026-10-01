@@ -1,12 +1,14 @@
 import { MessageSquareText, PlayCircle, Star, Users } from 'lucide-react';
+import type { InstructorProfile } from '../../types';
 import { getInstructor, instructorSlug } from '../../data/instructors';
 import { formatCompact, formatNumber } from '../../lib/format';
 import { AppLink } from '../ui/AppLink';
 import { Avatar } from '../ui/Avatar';
 import { TextLink } from '../ui/TextLink';
 
-export function InstructorCard({ name }: { name: string }) {
-  const instructor = getInstructor(name);
+/** `profile` overrides the catalog-derived stats (used by the instructor's own course preview). */
+export function InstructorCard({ name, profile }: { name: string; profile?: InstructorProfile }) {
+  const instructor = profile ?? getInstructor(name);
   const href = `/instructors/${instructorSlug(name)}`;
   const stats = [
     { icon: Star, value: instructor.rating.toFixed(1), label: 'Instructor Rating' },

@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { Heart } from 'lucide-react';
 import type { Course } from '../types';
-import { courses } from '../data/courses';
+import { findPublicCourse } from '../lib/publicCatalog';
 import { useStore } from '../context/StoreContext';
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
 import { cn } from '../lib/cn';
@@ -17,7 +17,7 @@ import { PageHeader } from '../components/ui/PageHeader';
 /** Resolve ids (kept in insertion order) to courses, skipping anything already purchased. */
 function resolve(ids: ReadonlySet<string>, enrolled: ReadonlySet<string>): Course[] {
   return [...ids].flatMap((id) => {
-    const course = courses.find((c) => c.id === id);
+    const course = findPublicCourse(id)?.course;
     return course && !enrolled.has(id) ? [course] : [];
   });
 }

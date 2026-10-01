@@ -3,7 +3,7 @@ import { ArrowRight, type LucideIcon } from 'lucide-react';
 import { cn } from '../../lib/cn';
 import { AppLink } from './AppLink';
 
-type Variant = 'primary' | 'secondary' | 'ghost' | 'soft' | 'white' | 'outline-white';
+type Variant = 'primary' | 'secondary' | 'ghost' | 'soft' | 'white' | 'outline-white' | 'danger';
 type Size = 'sm' | 'md' | 'lg';
 
 interface BaseProps {
@@ -46,6 +46,7 @@ const variants: Record<Variant, string> = {
   white: 'bg-white text-brand-700 shadow-float hover:-translate-y-px hover:bg-brand-50 active:translate-y-0',
   /** Transparent with a light outline, for gradient/dark panels */
   'outline-white': 'text-white ring-1 ring-white/40 hover:bg-white/10 hover:ring-white/70',
+  danger: 'bg-rose-600 text-white shadow-xs hover:bg-rose-700',
 };
 
 export function Button(props: ButtonProps) {

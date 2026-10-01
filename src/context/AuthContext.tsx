@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { DEMO_ACCOUNT, hashPassword, normaliseEmail, simulateRequest, type AuthUser, type ProfilePatch } from '../lib/auth';
+import { findDemoAccount, hashPassword, normaliseEmail, simulateRequest, type AuthUser, type ProfilePatch } from '../lib/auth';
 
 // Storage keys. `hitswork_user` / `hitswork_authenticated` hold the session; `hitswork_accounts` is the
 // demo "user database" (email → name + password hash).
@@ -96,17 +96,18 @@ function writeAccounts(accounts: Record<string, StoredAccount>) {
 }
 
 /** Creates the built-in demo account on first use in this browser. */
-async function ensureDemoAccount(): Promise<StoredAccount> {
+/** Creates a built-in demo account the first time someone signs in with it. */
+async function ensureDemoAccount(demo: NonNullable<ReturnType<typeof findDemoAccount>>): Promise<StoredAccount> {
   const accounts = readAccounts();
-  const existing = accounts[DEMO_ACCOUNT.email];
+  const existing = accounts[demo.email];
   if (existing) return existing;
   const account: StoredAccount = {
-    name: DEMO_ACCOUNT.name,
-    passwordHash: await hashPassword(DEMO_ACCOUNT.email, DEMO_ACCOUNT.password),
-    joinedAt: DEMO_ACCOUNT.joinedAt,
+    name: demo.name,
+    passwordHash: await hashPassword(demo.email, demo.password),
+    joinedAt: demo.joinedAt,
     country: 'India',
   };
-  writeAccounts({ ...readAccounts(), [DEMO_ACCOUNT.email]: account });
+  writeAccounts({ ...readAccounts(), [demo.email]: account });
   return account;
 }
 
@@ -125,7 +126,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback(async (email: string, password: string, remember: boolean) => {
     await simulateRequest();
     const key = normaliseEmail(email);
-    const account = key === DEMO_ACCOUNT.email ? await ensureDemoAccount() : readAccounts()[key];
+    const demo = findDemoAccount(key);
+    const account = demo ? await ensureDemoAccount(demo) : readAccounts()[key];
     if (!account) throw new AuthError('We couldn’t find an account with that email.', 'email');
     if (account.passwordHash !== (await hashPassword(account.hashEmail ?? key, password)))
       throw new AuthError('Incorrect password. Try again or reset it.', 'password');
@@ -145,7 +147,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await simulateRequest();
     const key = normaliseEmail(email);
     const accounts = readAccounts();
-    if (accounts[key] || key === DEMO_ACCOUNT.email)
+    if (accounts[key] || findDemoAccount(key))
       throw new AuthError('An account with this email already exists.', 'email');
     const joinedAt = new Date().toISOString();
     accounts[key] = { name: name.trim(), passwordHash: await hashPassword(key, password), joinedAt };

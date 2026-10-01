@@ -283,6 +283,7 @@ function ApplicationAside() {
 }
 
 export function TeachRegisterPage() {
+  const { isAuthenticated } = useAuth();
   usePageMeta(
     'Become an Instructor — Hitswork',
     'Apply to teach on Hitswork. Share your expertise, create online courses and reach learners worldwide.',
@@ -320,6 +321,7 @@ export function TeachRegisterPage() {
           </>
         }
         resetLabel="Submit a different application"
+        secondaryAction={isAuthenticated ? { label: 'Open Instructor Dashboard', href: '/instructor' } : undefined}
         onReset={onReset}
       />
     );

@@ -1,20 +1,52 @@
 import { startTransition, useEffect, useId, useRef, useState, type KeyboardEvent } from 'react';
 import { useNavigate } from 'react-router';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ChevronDown, GraduationCap, LayoutDashboard, LogOut, Settings, UserRound, type LucideIcon } from 'lucide-react';
+import {
+  ChevronDown,
+  GraduationCap,
+  LayoutDashboard,
+  LogOut,
+  Presentation,
+  Settings,
+  ShieldCheck,
+  UserRound,
+  type LucideIcon,
+} from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { useInstructor } from '../../context/InstructorContext';
 import { useStore } from '../../context/StoreContext';
-import { firstName } from '../../lib/auth';
+import { firstName, isAdminEmail } from '../../lib/auth';
 import { cn } from '../../lib/cn';
 import { AppLink } from '../ui/AppLink';
 import { Avatar } from '../ui/Avatar';
 
-export const accountLinks: { label: string; href: string; icon: LucideIcon }[] = [
+export interface MenuLink {
+  label: string;
+  href: string;
+  icon: LucideIcon;
+}
+
+export const accountLinks: MenuLink[] = [
   { label: 'My Learning', href: '/my-learning', icon: GraduationCap },
   { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { label: 'Profile', href: '/profile', icon: UserRound },
   { label: 'Settings', href: '/settings', icon: Settings },
 ];
+
+/** The learner account links, plus "Instructor Dashboard" for instructors. */
+export function useAccountLinks(): MenuLink[] {
+  const { isInstructor } = useInstructor();
+  const { user } = useAuth();
+  // The admin panel link is only ever rendered for the admin account.
+  if (isAdminEmail(user?.email)) return [{ label: 'Admin Panel', href: '/admin', icon: ShieldCheck }, ...accountLinks];
+  return isInstructor
+    ? [
+        ...accountLinks.slice(0, 2),
+        { label: 'Instructor Dashboard', href: '/instructor', icon: Presentation },
+        ...accountLinks.slice(2),
+      ]
+    : accountLinks;
+}
 
 /** Signs out, confirms with a toast and returns to the homepage. */
 export function useSignOut() {
@@ -34,8 +66,10 @@ export function useSignOut() {
 }
 
 /** Avatar + name button with an account dropdown (menu-button pattern). */
-export function UserMenu({ compact = false }: { compact?: boolean }) {
+export function UserMenu({ compact = false, links: customLinks }: { compact?: boolean; links?: MenuLink[] }) {
   const { user } = useAuth();
+  const defaultLinks = useAccountLinks();
+  const links = customLinks ?? defaultLinks;
   const signOut = useSignOut();
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -137,7 +171,7 @@ export function UserMenu({ compact = false }: { compact?: boolean }) {
               </div>
             </div>
             <div className="py-1.5">
-              {accountLinks.map(({ label, href, icon: Icon }, index) => (
+              {links.map(({ label, href, icon: Icon }, index) => (
                 <AppLink
                   key={href}
                   ref={(node) => {
@@ -157,7 +191,7 @@ export function UserMenu({ compact = false }: { compact?: boolean }) {
             <div className="border-t border-line pt-1.5">
               <button
                 ref={(node) => {
-                  itemsRef.current[accountLinks.length] = node;
+                  itemsRef.current[links.length] = node;
                 }}
                 type="button"
                 role="menuitem"

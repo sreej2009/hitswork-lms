@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router';
 import { motion } from 'framer-motion';
 import { LayoutGrid, Search, SearchX, SlidersHorizontal, X } from 'lucide-react';
 import { categories } from '../data/categories';
-import { courses } from '../data/courses';
+import { publicCourses } from '../lib/publicCatalog';
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
 import {
   PAGE_SIZE,
@@ -64,8 +64,10 @@ export function CoursesPage() {
   );
   const clearEverything = useCallback(() => setParams(toParams(defaultQuery), { replace: true }), [setParams]);
 
-  const results = useMemo(() => sortCourses(filterCourses(courses, query), query.sort), [query]);
-  const counts = useMemo(() => facetCounts(courses, query), [query]);
+  // Read once per visit: admin decisions and newly approved courses show up on the next page load.
+  const courses = useMemo(() => publicCourses(), []);
+  const results = useMemo(() => sortCourses(filterCourses(courses, query), query.sort), [courses, query]);
+  const counts = useMemo(() => facetCounts(courses, query), [courses, query]);
   const activeCount = activeFilterCount(query);
 
   const pageCount = Math.max(1, Math.ceil(results.length / PAGE_SIZE));

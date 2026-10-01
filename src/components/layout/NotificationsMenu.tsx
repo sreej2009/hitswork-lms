@@ -1,8 +1,8 @@
-import { useEffect, useId, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Award, Bell, BellOff, CheckCircle2, Flame, GraduationCap, PlayCircle, type LucideIcon } from 'lucide-react';
-import type { AppNotification, NotificationKind } from '../../types';
+import type { NotificationKind } from '../../types';
 import { useAuth } from '../../context/AuthContext';
 import { useLearning } from '../../context/LearningContext';
 import { cn } from '../../lib/cn';
@@ -17,8 +17,19 @@ const kindStyles: Record<NotificationKind, { icon: LucideIcon; className: string
   enrolled: { icon: GraduationCap, className: 'bg-indigo-50 text-indigo-600' },
 };
 
-function NotificationItem({ notification, onOpen }: { notification: AppNotification; onOpen: () => void }) {
-  const { icon: Icon, className } = kindStyles[notification.kind];
+export interface DropdownNotification {
+  id: string;
+  message: string;
+  /** ISO timestamp */
+  createdAt: string;
+  read: boolean;
+  icon: LucideIcon;
+  /** Tile colours for the icon */
+  iconClass: string;
+}
+
+function NotificationItem({ notification, onOpen }: { notification: DropdownNotification; onOpen: () => void }) {
+  const Icon = notification.icon;
   return (
     <li>
       <button
@@ -29,7 +40,7 @@ function NotificationItem({ notification, onOpen }: { notification: AppNotificat
           !notification.read && 'bg-brand-50/50',
         )}
       >
-        <span className={cn('grid size-9 shrink-0 place-items-center rounded-xl', className)}>
+        <span className={cn('grid size-9 shrink-0 place-items-center rounded-xl', notification.iconClass)}>
           <Icon aria-hidden className="size-[18px]" strokeWidth={2} />
         </span>
         <span className="min-w-0 flex-1">
@@ -48,16 +59,22 @@ function NotificationItem({ notification, onOpen }: { notification: AppNotificat
   );
 }
 
+interface NotificationsDropdownProps {
+  items: DropdownNotification[];
+  onOpen: (id: string) => void;
+  onMarkAllRead: () => void;
+  /** Replaces the list, e.g. a sign-in prompt for visitors */
+  placeholder?: ReactNode;
+  className?: string;
+}
+
 /** Bell button with an unread dot and a dropdown of recent notifications. */
-export function NotificationsMenu({ className }: { className?: string }) {
-  const { isAuthenticated } = useAuth();
-  const { notifications, unreadCount, markNotificationRead, markAllNotificationsRead } = useLearning();
-  const navigate = useNavigate();
+export function NotificationsDropdown({ items, onOpen, onMarkAllRead, placeholder, className }: NotificationsDropdownProps) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const panelId = useId();
-  const unread = isAuthenticated ? unreadCount : 0;
+  const unread = placeholder ? 0 : items.filter((item) => !item.read).length;
 
   useEffect(() => {
     if (!open) return;
@@ -77,12 +94,6 @@ export function NotificationsMenu({ className }: { className?: string }) {
       document.removeEventListener('keydown', onKeyDown);
     };
   }, [open]);
-
-  const openNotification = (notification: AppNotification) => {
-    markNotificationRead(notification.id);
-    setOpen(false);
-    if (notification.href) navigate(notification.href);
-  };
 
   return (
     <div ref={rootRef} className={cn('relative', className)}>
@@ -125,10 +136,10 @@ export function NotificationsMenu({ className }: { className?: string }) {
                   </span>
                 )}
               </p>
-              {isAuthenticated && (
+              {!placeholder && (
                 <button
                   type="button"
-                  onClick={markAllNotificationsRead}
+                  onClick={onMarkAllRead}
                   disabled={unread === 0}
                   className="rounded-md text-xs font-semibold text-brand-600 transition-colors hover:text-brand-700 disabled:cursor-default disabled:text-subtle"
                 >
@@ -137,32 +148,67 @@ export function NotificationsMenu({ className }: { className?: string }) {
               )}
             </div>
 
-            {!isAuthenticated ? (
-              <div className="px-5 py-8 text-center">
-                <p className="text-sm text-body">Sign in to see updates about your courses.</p>
-                <Button href="/login" size="sm" shape="pill" className="mt-4 px-5">
-                  Sign In
-                </Button>
-              </div>
-            ) : notifications.length === 0 ? (
-              <div className="flex flex-col items-center px-5 py-10 text-center">
-                <BellOff aria-hidden className="size-6 text-subtle" strokeWidth={1.8} />
-                <p className="mt-3 text-sm font-medium text-ink">You’re all caught up</p>
-              </div>
-            ) : (
-              <ul className="max-h-[min(24rem,60vh)] space-y-0.5 overflow-y-auto p-2">
-                {notifications.map((notification) => (
-                  <NotificationItem
-                    key={notification.id}
-                    notification={notification}
-                    onOpen={() => openNotification(notification)}
-                  />
-                ))}
-              </ul>
-            )}
+            {placeholder ??
+              (items.length === 0 ? (
+                <div className="flex flex-col items-center px-5 py-10 text-center">
+                  <BellOff aria-hidden className="size-6 text-subtle" strokeWidth={1.8} />
+                  <p className="mt-3 text-sm font-medium text-ink">You’re all caught up</p>
+                </div>
+              ) : (
+                <ul className="max-h-[min(24rem,60vh)] space-y-0.5 overflow-y-auto p-2">
+                  {items.map((notification) => (
+                    <NotificationItem
+                      key={notification.id}
+                      notification={notification}
+                      onOpen={() => {
+                        setOpen(false);
+                        onOpen(notification.id);
+                      }}
+                    />
+                  ))}
+                </ul>
+              ))}
           </motion.div>
         )}
       </AnimatePresence>
     </div>
+  );
+}
+
+/** The learner's notifications (course progress, certificates, streaks). */
+export function NotificationsMenu({ className }: { className?: string }) {
+  const { isAuthenticated } = useAuth();
+  const { notifications, markNotificationRead, markAllNotificationsRead } = useLearning();
+  const navigate = useNavigate();
+
+  const items: DropdownNotification[] = notifications.map((notification) => ({
+    ...notification,
+    icon: kindStyles[notification.kind].icon,
+    iconClass: kindStyles[notification.kind].className,
+  }));
+
+  const open = (id: string) => {
+    const notification = notifications.find((n) => n.id === id);
+    markNotificationRead(id);
+    if (notification?.href) navigate(notification.href);
+  };
+
+  return (
+    <NotificationsDropdown
+      className={className}
+      items={items}
+      onOpen={open}
+      onMarkAllRead={markAllNotificationsRead}
+      placeholder={
+        isAuthenticated ? undefined : (
+          <div className="px-5 py-8 text-center">
+            <p className="text-sm text-body">Sign in to see updates about your courses.</p>
+            <Button href="/login" size="sm" shape="pill" className="mt-4 px-5">
+              Sign In
+            </Button>
+          </div>
+        )
+      }
+    />
   );
 }

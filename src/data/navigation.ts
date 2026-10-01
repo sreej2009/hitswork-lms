@@ -10,10 +10,12 @@ export const footerColumns: FooterColumn[] = [
   {
     title: 'Quick Links',
     links: [
-      { label: 'About Us', href: '/about' },
+      { label: 'About Hitswork', href: '/about' },
+      { label: 'Courses', href: '/courses' },
+      { label: 'Help Center', href: '/help' },
+      { label: 'Contact', href: '/contact' },
       { label: 'Careers', href: '/careers' },
       { label: 'Blog', href: '/blog' },
-      { label: 'Help & Support', href: '/support' },
     ],
   },
   {
@@ -28,14 +30,21 @@ export const footerColumns: FooterColumn[] = [
     ],
   },
   {
-    title: 'For Business',
+    title: 'Work With Us',
     links: [
       { label: 'Teach on Hitswork', href: '/teach' },
-      { label: 'Enterprise Solutions', href: '/business' },
+      { label: 'For Business', href: '/business' },
       { label: 'Partner with Us', href: '/partners' },
       { label: 'Affiliate Program', href: '/affiliates' },
     ],
   },
+];
+
+/** Secondary links shown in the mobile drawer. */
+export const supportNav: NavLink[] = [
+  { label: 'About Hitswork', href: '/about' },
+  { label: 'Help Center', href: '/help' },
+  { label: 'Contact Us', href: '/contact' },
 ];
 
 export const legalLinks: NavLink[] = [
