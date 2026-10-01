@@ -4,6 +4,7 @@ import { Heart, ShoppingCart, Trash2 } from 'lucide-react';
 import type { Course } from '../../types';
 import { courseDetails } from '../../data/courseDetails';
 import { useStore } from '../../context/StoreContext';
+import { useAuthGate } from '../../hooks/useAuthGate';
 import { discountPercent, formatNumber, formatPrice } from '../../lib/format';
 import { AppLink } from '../ui/AppLink';
 import { RatingStars } from '../ui/RatingStars';
@@ -19,6 +20,7 @@ interface CartItemProps {
 
 export const CartItem = forwardRef<HTMLLIElement, CartItemProps>(function CartItem({ course, variant = 'cart' }, ref) {
   const { removeFromCart, moveToWishlist, moveToCart, toggleWishlist } = useStore();
+  const gate = useAuthGate();
   const detail = courseDetails[course.id];
   const href = `/course/${course.id}`;
   const discount = discountPercent(course.price, course.originalPrice);
@@ -93,7 +95,7 @@ export const CartItem = forwardRef<HTMLLIElement, CartItemProps>(function CartIt
                 </button>
                 <button
                   type="button"
-                  onClick={() => moveToWishlist(course.id, course.title)}
+                  onClick={() => gate() && moveToWishlist(course.id, course.title)}
                   aria-label={`Move ${course.title} to wishlist`}
                   className={`${actionClass} text-brand-600 hover:bg-brand-50`}
                 >
@@ -114,7 +116,7 @@ export const CartItem = forwardRef<HTMLLIElement, CartItemProps>(function CartIt
                 </button>
                 <button
                   type="button"
-                  onClick={() => toggleWishlist(course.id, course.title)}
+                  onClick={() => toggleWishlist(course.id)}
                   aria-label={`Remove ${course.title} from wishlist`}
                   className={`${actionClass} text-muted hover:bg-canvas hover:text-ink`}
                 >

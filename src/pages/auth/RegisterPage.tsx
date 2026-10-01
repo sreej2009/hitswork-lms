@@ -1,4 +1,5 @@
 import { useCallback, useState, type FormEvent } from 'react';
+import { useLocation } from 'react-router';
 import { AlertCircle, Info, Loader2 } from 'lucide-react';
 import { AuthError, useAuth } from '../../context/AuthContext';
 import { useStore } from '../../context/StoreContext';
@@ -28,7 +29,10 @@ function StrengthMeter({ password }: { password: string }) {
         {[1, 2, 3, 4].map((step) => (
           <span
             key={step}
-            className={cn('h-1.5 flex-1 rounded-full transition-colors', step <= score ? strengthColors[score] : 'bg-line')}
+            className={cn(
+              'h-1.5 flex-1 rounded-full transition-colors',
+              step <= score ? strengthColors[score] : 'bg-line',
+            )}
           />
         ))}
       </div>
@@ -40,6 +44,7 @@ function StrengthMeter({ password }: { password: string }) {
 export function RegisterPage() {
   useDocumentTitle('Create Account — Hitswork');
   const { register } = useAuth();
+  const location = useLocation();
   const { notify } = useStore();
   const validate = useCallback(
     (v: RegisterValues) => ({
@@ -83,7 +88,11 @@ export function RegisterPage() {
       footer={
         <>
           Already have an account?{' '}
-          <AppLink href="/login" className="font-semibold text-brand-600 hover:text-brand-700">
+          <AppLink
+            href={`/login${location.search}`}
+            state={location.state}
+            className="font-semibold text-brand-600 hover:text-brand-700"
+          >
             Sign In
           </AppLink>
         </>
@@ -91,11 +100,18 @@ export function RegisterPage() {
     >
       <form onSubmit={onSubmit} noValidate className="space-y-5" aria-label="Create account">
         {formError && (
-          <div role="alert" className="flex items-start gap-3 rounded-xl border border-rose-200 bg-rose-50 p-3.5 text-sm text-rose-800">
+          <div
+            role="alert"
+            className="flex items-start gap-3 rounded-xl border border-rose-200 bg-rose-50 p-3.5 text-sm text-rose-800"
+          >
             <AlertCircle aria-hidden className="mt-0.5 size-[18px] shrink-0 text-rose-600" strokeWidth={2} />
             <p>
               {formError.message}{' '}
-              <AppLink href="/login" className="font-semibold underline underline-offset-2">
+              <AppLink
+                href={`/login${location.search}`}
+                state={location.state}
+                className="font-semibold underline underline-offset-2"
+              >
                 Sign in instead
               </AppLink>
             </p>
@@ -179,7 +195,10 @@ export function RegisterPage() {
             .
           </Checkbox>
           {visibleErrors.terms && (
-            <p id={`${idFor('terms')}-error`} className="mt-1.5 flex items-center gap-1.5 pl-8 text-xs font-medium text-rose-600">
+            <p
+              id={`${idFor('terms')}-error`}
+              className="mt-1.5 flex items-center gap-1.5 pl-8 text-xs font-medium text-rose-600"
+            >
               <AlertCircle aria-hidden className="size-3.5 shrink-0" strokeWidth={2.2} />
               {visibleErrors.terms}
             </p>

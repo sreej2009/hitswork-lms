@@ -38,7 +38,10 @@ interface AuthValue {
   updateProfile: (patch: ProfilePatch) => AuthUser;
   /** Throws AuthError (field 'password') if `current` is wrong. */
   changePassword: (current: string, next: string) => Promise<void>;
-  requestPasswordReset: (email: string) => Promise<void>;
+  /** Returns a reset token. Demo only: a real service would email the link instead. */
+  requestPasswordReset: (email: string) => Promise<string>;
+  /** Sets a new password using a token from requestPasswordReset */
+  resetPassword: (token: string, password: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthValue | null>(null);
@@ -96,6 +99,25 @@ function writeAccounts(accounts: Record<string, StoredAccount>) {
 }
 
 /** Creates the built-in demo account on first use in this browser. */
+const RESET_KEY = 'hitswork_reset_tokens';
+type ResetTokens = Record<string, { email: string; expires: number }>;
+
+function readResetTokens(): ResetTokens {
+  try {
+    return JSON.parse(window.localStorage.getItem(RESET_KEY) ?? '{}') as ResetTokens;
+  } catch {
+    return {};
+  }
+}
+
+function writeResetTokens(tokens: ResetTokens) {
+  try {
+    window.localStorage.setItem(RESET_KEY, JSON.stringify(tokens));
+  } catch {
+    // Storage blocked: the link simply won't work.
+  }
+}
+
 /** Creates a built-in demo account the first time someone signs in with it. */
 async function ensureDemoAccount(demo: NonNullable<ReturnType<typeof findDemoAccount>>): Promise<StoredAccount> {
   const accounts = readAccounts();
@@ -211,9 +233,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [user],
   );
 
-  const requestPasswordReset = useCallback(async () => {
+  const requestPasswordReset = useCallback(async (email: string) => {
     // Deliberately identical for known and unknown emails, so the form can't reveal who has an account.
     await simulateRequest(900);
+    const key = normaliseEmail(email);
+    const demo = findDemoAccount(key);
+    if (demo) await ensureDemoAccount(demo);
+    const token = Array.from(crypto.getRandomValues(new Uint8Array(16)), (b) => b.toString(16).padStart(2, '0')).join('');
+    if (readAccounts()[key]) {
+      const tokens = readResetTokens();
+      tokens[token] = { email: key, expires: Date.now() + 30 * 60_000 };
+      writeResetTokens(tokens);
+    }
+    return token;
+  }, []);
+
+  const resetPassword = useCallback(async (token: string, password: string) => {
+    await simulateRequest(800);
+    const tokens = readResetTokens();
+    const entry = tokens[token];
+    if (!entry || entry.expires < Date.now()) throw new AuthError('This reset link is invalid or has expired.');
+    const accounts = readAccounts();
+    const account = accounts[entry.email];
+    if (!account) throw new AuthError('This reset link is invalid or has expired.');
+    accounts[entry.email] = { ...account, passwordHash: await hashPassword(account.hashEmail ?? entry.email, password) };
+    writeAccounts(accounts);
+    delete tokens[token];
+    writeResetTokens(tokens);
   }, []);
 
   const value = useMemo(
@@ -226,8 +272,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       updateProfile,
       changePassword,
       requestPasswordReset,
+      resetPassword,
     }),
-    [user, login, register, logout, updateProfile, changePassword, requestPasswordReset],
+    [user, login, register, logout, updateProfile, changePassword, requestPasswordReset, resetPassword],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

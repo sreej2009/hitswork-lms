@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
-import { Loader2, PlayCircle } from 'lucide-react';
+import { useNavigate } from 'react-router';
+import { Loader2 } from 'lucide-react';
 import type { Course } from '../../types';
 import { useStore } from '../../context/StoreContext';
+import { useAuthGate } from '../../hooks/useAuthGate';
 import { Button } from '../ui/Button';
 
 interface EnrollButtonProps {
@@ -18,13 +20,15 @@ interface EnrollButtonProps {
  */
 export function EnrollButton({ course, size = 'lg', fullWidth, className }: EnrollButtonProps) {
   const { enrolled, enroll } = useStore();
+  const gate = useAuthGate();
+  const navigate = useNavigate();
   const [pending, setPending] = useState(false);
   const timer = useRef<number | undefined>(undefined);
   useEffect(() => () => window.clearTimeout(timer.current), []);
 
   if (enrolled.has(course.id)) {
     return (
-      <Button href={`/learn/${course.id}`} size={size} fullWidth={fullWidth} icon={PlayCircle} className={className}>
+      <Button href={`/learn/${course.id}`} size={size} fullWidth={fullWidth} arrow className={className}>
         Start Learning
       </Button>
     );
@@ -32,13 +36,21 @@ export function EnrollButton({ course, size = 'lg', fullWidth, className }: Enro
 
   if (course.price > 0) {
     return (
-      <Button href={`/checkout?buy=${course.id}`} size={size} fullWidth={fullWidth} arrow className={className}>
+      <Button
+        size={size}
+        fullWidth={fullWidth}
+        arrow
+        className={className}
+        // Guests sign in first and come back to this course page.
+        onClick={() => gate() && navigate(`/checkout?buy=${course.id}`)}
+      >
         Enroll Now
       </Button>
     );
   }
 
   const onClick = () => {
+    if (!gate()) return;
     setPending(true);
     timer.current = window.setTimeout(() => {
       setPending(false);

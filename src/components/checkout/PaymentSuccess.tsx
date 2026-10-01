@@ -102,8 +102,8 @@ export function PaymentSuccess({ order, courses }: { order: Order; courses: Cour
         </div>
 
         <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
-          <Button href="/my-learning" size="lg" arrow>
-            Start Learning
+          <Button href={courses[0] ? `/learn/${courses[0].id}` : '/my-learning'} size="lg" arrow>
+            Continue Learning
           </Button>
           <Button href="/my-learning" size="lg" variant="secondary">
             Go to My Courses

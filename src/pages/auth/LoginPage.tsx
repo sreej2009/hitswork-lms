@@ -28,7 +28,11 @@ export function LoginPage() {
   const from = (location.state as { from?: Location } | null)?.from;
   // Instructor sign-in: /login?as=instructor (or /instructor/login), or being sent here from an instructor page.
   const role: Role =
-    params.get('as') === 'instructor' || from?.pathname.startsWith('/instructor') ? 'instructor' : 'learner';
+    params.get('as') === 'instructor' ||
+    from?.pathname.startsWith('/instructor') ||
+    params.get('redirect')?.startsWith('/instructor')
+      ? 'instructor'
+      : 'learner';
   const instructor = role === 'instructor';
   // Admin sign-in (/login?as=admin or /admin/login) is not offered in the role switch.
   const admin = params.get('as') === 'admin' || !!from?.pathname.startsWith('/admin');
@@ -95,7 +99,11 @@ export function LoginPage() {
         ) : (
           <>
             Don’t have an account?{' '}
-            <AppLink href="/register" className="font-semibold text-brand-600 hover:text-brand-700">
+            <AppLink
+              href={`/register${location.search}`}
+              state={location.state}
+              className="font-semibold text-brand-600 hover:text-brand-700"
+            >
               Create an account
             </AppLink>
           </>
@@ -164,7 +172,11 @@ export function LoginPage() {
             <p>
               {formError.message}{' '}
               {formError.field === 'email' ? (
-                <AppLink href="/register" className="font-semibold underline underline-offset-2">
+                <AppLink
+                  href={`/register${location.search}`}
+                  state={location.state}
+                  className="font-semibold underline underline-offset-2"
+                >
                   Create an account
                 </AppLink>
               ) : (

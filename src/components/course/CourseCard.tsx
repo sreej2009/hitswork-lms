@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import { Check, Clock, Heart, ShoppingCart, Users } from 'lucide-react';
 import type { Course, CourseBadge } from '../../types';
 import { useStore } from '../../context/StoreContext';
+import { useAuthGate } from '../../hooks/useAuthGate';
 import { accentForCategory } from '../../data/categories';
 import { accents } from '../../lib/accents';
 import { cn } from '../../lib/cn';
@@ -19,6 +20,7 @@ const badgeTone = {
 
 function WishlistButton({ course }: { course: Course }) {
   const { wishlist, toggleWishlist } = useStore();
+  const gate = useAuthGate();
   const saved = wishlist.has(course.id);
   return (
     <motion.button
@@ -26,7 +28,12 @@ function WishlistButton({ course }: { course: Course }) {
       whileTap={{ scale: 0.86 }}
       aria-pressed={saved}
       aria-label={saved ? `Remove ${course.title} from wishlist` : `Save ${course.title} to wishlist`}
-      onClick={() => toggleWishlist(course.id, course.title)}
+      onClick={(event) => {
+        // The whole card is a link; the heart works on its own.
+        event.preventDefault();
+        event.stopPropagation();
+        if (gate({ type: 'wishlist', courseId: course.id, title: course.title })) toggleWishlist(course.id);
+      }}
       className={cn(
         'relative z-10 grid size-9 place-items-center rounded-full bg-white/95 shadow-xs backdrop-blur transition-colors duration-200',
         saved ? 'text-rose-500' : 'text-body hover:text-rose-500',

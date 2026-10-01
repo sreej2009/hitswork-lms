@@ -13,7 +13,7 @@ export function TopCategories() {
           id="top-categories-title"
           title="Top Categories"
           subtitle="Explore courses in the most in-demand fields"
-          action={<TextLink href="/categories">All Categories</TextLink>}
+          action={<TextLink href="/courses">All Categories</TextLink>}
         />
       </Reveal>
       <RevealGroup className="mt-10 grid gap-5 sm:grid-cols-2 sm:gap-6 xl:grid-cols-4">

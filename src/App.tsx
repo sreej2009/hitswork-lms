@@ -36,6 +36,7 @@ import { CoursesPage } from './pages/CoursesPage';
 import { HomePage } from './pages/HomePage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { ForgotPasswordPage } from './pages/auth/ForgotPasswordPage';
+import { ResetPasswordPage } from './pages/auth/ResetPasswordPage';
 import { LoginPage } from './pages/auth/LoginPage';
 import { RegisterPage } from './pages/auth/RegisterPage';
 import { AchievementsPage } from './pages/dashboard/AchievementsPage';
@@ -101,6 +102,7 @@ export default function App() {
                     </Route>
                   </Route>
                   <Route path="forgot-password" element={<ForgotPasswordPage />} />
+                  <Route path="reset-password" element={<ResetPasswordPage />} />
 
                   {/* Student area: sidebar layout, sign-in required */}
                   <Route element={<RequireAuth />}>
@@ -139,8 +141,11 @@ export default function App() {
                     <Route path="courses" element={<CoursesPage />} />
                     <Route path="course/:id" element={<CourseDetailsPage />} />
                     <Route path="cart" element={<CartPage />} />
-                    <Route path="checkout" element={<CheckoutPage />} />
-                    <Route path="checkout/success" element={<CheckoutSuccessPage />} />
+                    {/* Paying needs an account; guests sign in and come back with their cart intact. */}
+                    <Route element={<RequireAuth />}>
+                      <Route path="checkout" element={<CheckoutPage />} />
+                      <Route path="checkout/success" element={<CheckoutSuccessPage />} />
+                    </Route>
                     <Route path="teach" element={<TeachPage />} />
                     <Route path="teach/register" element={<TeachRegisterPage />} />
                     <Route path="business" element={<BusinessPage />} />

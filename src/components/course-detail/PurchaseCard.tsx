@@ -8,6 +8,7 @@ import { discountPercent, formatPrice } from '../../lib/format';
 import { Button } from '../ui/Button';
 import { SmartImage } from '../ui/SmartImage';
 import { EnrollButton } from './EnrollButton';
+import { useAuthGate } from '../../hooks/useAuthGate';
 
 export function PriceBlock({ course, compact }: { course: Course; compact?: boolean }) {
   if (course.price === 0) {
@@ -45,16 +46,19 @@ export function PriceBlock({ course, compact }: { course: Course; compact?: bool
 
 function WishlistToggle({ course }: { course: Course }) {
   const { wishlist, toggleWishlist } = useStore();
+  const gate = useAuthGate();
   const saved = wishlist.has(course.id);
   return (
     <motion.button
       type="button"
-      whileTap={{ scale: 0.9 }}
+      whileTap={{ scale: 0.96 }}
       aria-pressed={saved}
       aria-label={saved ? 'Remove from wishlist' : 'Add to wishlist'}
-      onClick={() => toggleWishlist(course.id, course.title)}
+      onClick={() => {
+        if (gate({ type: 'wishlist', courseId: course.id, title: course.title })) toggleWishlist(course.id);
+      }}
       className={cn(
-        'grid size-12 shrink-0 place-items-center rounded-xl border transition-colors duration-200 sm:size-[52px]',
+        'inline-flex h-12 grow basis-0 items-center justify-center gap-2 rounded-xl border px-3 text-[15px] font-semibold whitespace-nowrap transition-colors duration-200 sm:h-[52px]',
         saved
           ? 'border-rose-200 bg-rose-50 text-rose-500'
           : 'border-line-strong bg-white text-body hover:border-rose-200 hover:bg-rose-50 hover:text-rose-500',
@@ -69,6 +73,7 @@ function WishlistToggle({ course }: { course: Course }) {
       >
         <Heart aria-hidden className="size-5" strokeWidth={2} fill={saved ? 'currentColor' : 'none'} />
       </motion.span>
+      {saved ? 'Wishlisted' : 'Wishlist'}
     </motion.button>
   );
 }

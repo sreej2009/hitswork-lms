@@ -182,10 +182,15 @@ export function MobileDrawer({ open, onClose, returnFocusRef }: MobileDrawerProp
               <ul className="space-y-0.5" aria-label="Your account">
                 {[
                   ...(isAuthenticated
-                    ? drawerAccountLinks.map((link) => ({ ...link, count: link.href === '/my-learning' ? enrolled.size : 0 }))
-                    : [{ label: 'My Learning', href: '/my-learning', icon: GraduationCap, count: enrolled.size }]),
+                    ? drawerAccountLinks.map((link) => ({
+                        ...link,
+                        count: link.href === '/my-learning' ? enrolled.size : link.href === '/wishlist' ? wishlist.size : 0,
+                      }))
+                    : [
+                        { label: 'My Learning', href: '/my-learning', icon: GraduationCap, count: 0 },
+                        { label: 'Wishlist', href: '/wishlist', icon: Heart, count: 0 },
+                      ]),
                   { label: 'My Cart', href: '/cart', icon: ShoppingCart, count: cart.size },
-                  { label: 'Wishlist', href: isAuthenticated ? '/wishlist' : '/cart', icon: Heart, count: wishlist.size },
                 ].map(({ label, href, icon: Icon, count }) => (
                   <li key={label}>
                     <AppLink href={href} onClick={onClose} className={linkClass}>

@@ -19,18 +19,22 @@ export function ForgotPasswordPage() {
   const { values, setValue, touch, visibleErrors, attemptSubmit } = useForm<ResetValues>({ email: '' }, validate);
   const [pending, setPending] = useState(false);
   const [sentTo, setSentTo] = useState<string | null>(null);
+  const [token, setToken] = useState<string | null>(null);
 
   const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!attemptSubmit(['email'], () => EMAIL_ID)) return;
     setPending(true);
-    await requestPasswordReset(values.email);
+    setToken(await requestPasswordReset(values.email));
     setPending(false);
     setSentTo(values.email.trim());
   };
 
   const backToSignIn = (
-    <AppLink href="/login" className="inline-flex items-center gap-1.5 font-semibold text-brand-600 hover:text-brand-700">
+    <AppLink
+      href="/login"
+      className="inline-flex items-center gap-1.5 font-semibold text-brand-600 hover:text-brand-700"
+    >
       <ArrowLeft aria-hidden className="size-4" strokeWidth={2.2} />
       Back to Sign In
     </AppLink>
@@ -52,6 +56,15 @@ export function ForgotPasswordPage() {
             If an account exists with this email, we’ve sent password reset instructions.
           </p>
           <p className="mt-1 truncate text-sm font-semibold text-emerald-900">{sentTo}</p>
+          {token && (
+            <p className="mt-4 rounded-xl bg-white/80 px-3 py-2.5 text-xs text-emerald-900 ring-1 ring-emerald-200">
+              Demo: emails aren’t sent, so{' '}
+              <AppLink href={`/reset-password?token=${token}`} className="font-semibold underline underline-offset-2">
+                open the reset link here
+              </AppLink>
+              .
+            </p>
+          )}
           <button
             type="button"
             onClick={() => setSentTo(null)}

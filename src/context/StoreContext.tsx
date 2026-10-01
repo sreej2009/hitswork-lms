@@ -10,6 +10,9 @@ import {
 } from 'react';
 import type { Order, PaymentMethodId } from '../types';
 import { findCoupon } from '../lib/pricing';
+import { normaliseEmail } from '../lib/auth';
+import { takePendingIntent } from '../lib/pendingIntent';
+import { useAuth } from './AuthContext';
 
 interface Toast {
   id: number;
@@ -28,8 +31,9 @@ interface PlaceOrderInput {
 
 interface StoreValue {
   cart: ReadonlySet<string>;
+  /** The signed-in account's saved courses (empty for guests) */
   wishlist: ReadonlySet<string>;
-  /** Purchased (or free-enrolled) course ids */
+  /** Purchased (or free-enrolled) course ids — empty for guests, so they always see "Enroll Now" */
   enrolled: ReadonlySet<string>;
   /** Applied coupon code, if any */
   coupon: string | null;
@@ -42,7 +46,7 @@ interface StoreValue {
   removeFromCart: (id: string, title: string) => void;
   moveToWishlist: (id: string, title: string) => void;
   moveToCart: (id: string, title: string) => void;
-  toggleWishlist: (id: string, title: string) => void;
+  toggleWishlist: (id: string) => void;
   enroll: (id: string, title: string) => void;
   /** Adds course access without a toast (sample data, migrations). */
   grantAccess: (ids: string[]) => void;
@@ -86,6 +90,24 @@ function save(key: string, value: unknown) {
 
 const loadSet = (key: string) => new Set(load<string[]>(key, []));
 
+const EMPTY: ReadonlySet<string> = new Set();
+
+/** Each account has its own wishlist: hitswork_wishlist:<email>. */
+const wishlistKey = (email: string) => `${KEYS.wishlist}:${email}`;
+
+function loadWishlist(email: string): Set<string> {
+  try {
+    const own = window.localStorage.getItem(wishlistKey(email));
+    if (own) return new Set(JSON.parse(own) as string[]);
+    // Earlier builds kept one shared wishlist; hand it to the first account that signs in.
+    const legacy = window.localStorage.getItem(KEYS.wishlist);
+    window.localStorage.removeItem(KEYS.wishlist);
+    return new Set(legacy ? (JSON.parse(legacy) as string[]) : []);
+  } catch {
+    return new Set();
+  }
+}
+
 function without(set: ReadonlySet<string>, id: string): Set<string> {
   const next = new Set(set);
   next.delete(id);
@@ -99,17 +121,35 @@ function generateOrderId(date: Date) {
 }
 
 export function StoreProvider({ children }: { children: ReactNode }) {
+  const { user } = useAuth();
+  const email = user ? normaliseEmail(user.email) : null;
   const [cart, setCart] = useState<ReadonlySet<string>>(() => loadSet(KEYS.cart));
-  const [wishlist, setWishlist] = useState<ReadonlySet<string>>(() => loadSet(KEYS.wishlist));
-  const [enrolled, setEnrolled] = useState<ReadonlySet<string>>(() => loadSet(KEYS.enrolled));
+  const [wishlistState, setWishlistState] = useState<{ email: string | null; ids: ReadonlySet<string> }>(() => ({
+    email,
+    ids: email ? loadWishlist(email) : EMPTY,
+  }));
+  const [ownedEnrolled, setEnrolled] = useState<ReadonlySet<string>>(() => loadSet(KEYS.enrolled));
   const [coupon, setCoupon] = useState<string | null>(() => load<string | null>(KEYS.coupon, null));
   const [orders, setOrders] = useState<readonly Order[]>(() => load<Order[]>(KEYS.orders, []));
   const [toast, setToast] = useState<Toast | null>(null);
   const timer = useRef<number | undefined>(undefined);
 
+  // Switch wishlists when the signed-in account changes (sign in, sign out, another account).
+  if (wishlistState.email !== email) setWishlistState({ email, ids: email ? loadWishlist(email) : EMPTY });
+  const wishlist = wishlistState.email === email ? wishlistState.ids : EMPTY;
+  const setWishlist = useCallback(
+    (update: (current: ReadonlySet<string>) => ReadonlySet<string>) =>
+      setWishlistState((state) => (state.email ? { ...state, ids: update(state.ids) } : state)),
+    [],
+  );
+  // Guests don't own courses; only a signed-in learner sees "Start Learning".
+  const enrolled = email ? ownedEnrolled : EMPTY;
+
   useEffect(() => save(KEYS.cart, [...cart]), [cart]);
-  useEffect(() => save(KEYS.wishlist, [...wishlist]), [wishlist]);
-  useEffect(() => save(KEYS.enrolled, [...enrolled]), [enrolled]);
+  useEffect(() => {
+    if (wishlistState.email) save(wishlistKey(wishlistState.email), [...wishlistState.ids]);
+  }, [wishlistState]);
+  useEffect(() => save(KEYS.enrolled, [...ownedEnrolled]), [ownedEnrolled]);
   useEffect(() => save(KEYS.coupon, coupon), [coupon]);
   useEffect(() => save(KEYS.orders, orders), [orders]);
 
@@ -121,10 +161,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const addToCart = useCallback(
     (id: string, title: string) => {
+      if (enrolled.has(id)) {
+        notify('You’re already enrolled in this course.');
+        return;
+      }
       notify(`Added “${title}” to your cart`);
       setCart((current) => new Set(current).add(id));
     },
-    [notify],
+    [notify, enrolled],
   );
 
   const removeFromCart = useCallback(
@@ -140,21 +184,24 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     [cart, addToCart, removeFromCart],
   );
 
+  /** Requires a signed-in account — UI gates this with useAuthGate first. */
   const toggleWishlist = useCallback(
-    (id: string, title: string) => {
-      notify(wishlist.has(id) ? `Removed “${title}” from your wishlist` : `Saved “${title}” to your wishlist`);
+    (id: string) => {
+      if (!email) return;
+      notify(wishlist.has(id) ? 'Removed from wishlist' : 'Added to wishlist');
       setWishlist((current) => (current.has(id) ? without(current, id) : new Set(current).add(id)));
     },
-    [wishlist, notify],
+    [email, wishlist, notify, setWishlist],
   );
 
   const moveToWishlist = useCallback(
     (id: string, title: string) => {
+      if (!email) return;
       notify(`Moved “${title}” to your wishlist`);
       setCart((current) => without(current, id));
       setWishlist((current) => new Set(current).add(id));
     },
-    [notify],
+    [email, notify, setWishlist],
   );
 
   const moveToCart = useCallback(
@@ -163,8 +210,17 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setWishlist((current) => without(current, id));
       setCart((current) => new Set(current).add(id));
     },
-    [notify],
+    [notify, setWishlist],
   );
+
+  // Replay a guest's "save to wishlist" once they have signed in.
+  useEffect(() => {
+    if (!email) return;
+    const intent = takePendingIntent();
+    if (intent?.type !== 'wishlist') return;
+    setWishlist((current) => new Set(current).add(intent.courseId));
+    notify('Added to wishlist');
+  }, [email, notify, setWishlist]);
 
   /** Direct enrolment, used for free courses. */
   const enroll = useCallback(
@@ -197,7 +253,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setWishlist((current) => new Set([...current].filter((id) => !input.courseIds.includes(id))));
     setCoupon(null);
     return order;
-  }, []);
+  }, [setWishlist]);
 
   const value = useMemo(
     () => ({

@@ -2,8 +2,10 @@ import { startTransition, useEffect, useId, useRef, useState, type KeyboardEvent
 import { useNavigate } from 'react-router';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
+  Award,
   ChevronDown,
   GraduationCap,
+  Heart,
   LayoutDashboard,
   LogOut,
   Presentation,
@@ -27,8 +29,10 @@ export interface MenuLink {
 }
 
 export const accountLinks: MenuLink[] = [
-  { label: 'My Learning', href: '/my-learning', icon: GraduationCap },
   { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+  { label: 'My Learning', href: '/my-learning', icon: GraduationCap },
+  { label: 'Wishlist', href: '/wishlist', icon: Heart },
+  { label: 'Certificates', href: '/certificates', icon: Award },
   { label: 'Profile', href: '/profile', icon: UserRound },
   { label: 'Settings', href: '/settings', icon: Settings },
 ];
