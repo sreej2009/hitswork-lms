@@ -28,45 +28,50 @@ export function DataTable<T>({ rows, columns, rowKey, card, caption, empty, brea
   if (rows.length === 0) return <>{empty}</>;
   return (
     <>
-      <table className={cn('hidden w-full text-left text-sm', breakpoint === 'lg' ? 'lg:table' : 'xl:table')}>
-        <caption className="sr-only">{caption}</caption>
-        <thead>
-          <tr className="border-b border-line text-xs text-muted">
-            {columns.map((column, index) => (
-              <th
-                key={column.key}
-                scope="col"
-                className={cn(
-                  'py-3 font-medium',
-                  index === 0 ? 'pr-4 pl-6' : index === columns.length - 1 ? 'pr-6 pl-3' : 'px-3',
-                  column.align === 'right' && 'text-right',
-                )}
-              >
-                {column.header}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row) => (
-            <tr key={rowKey(row)} className="border-b border-line transition-colors last:border-b-0 hover:bg-canvas/60">
+      <div className={cn('relative hidden overflow-x-auto', breakpoint === 'lg' ? 'lg:block' : 'xl:block')}>
+        <table className="w-full text-left text-sm">
+          <caption className="sr-only">{caption}</caption>
+          <thead>
+            <tr className="border-b border-line text-xs text-muted">
               {columns.map((column, index) => (
-                <td
+                <th
                   key={column.key}
+                  scope="col"
                   className={cn(
-                    'py-3 align-middle',
+                    'py-3 font-medium',
                     index === 0 ? 'pr-4 pl-6' : index === columns.length - 1 ? 'pr-6 pl-3' : 'px-3',
                     column.align === 'right' && 'text-right',
-                    column.className,
                   )}
                 >
-                  {column.render(row)}
-                </td>
+                  {column.header}
+                </th>
               ))}
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {rows.map((row) => (
+              <tr
+                key={rowKey(row)}
+                className="border-b border-line transition-colors last:border-b-0 hover:bg-canvas/60"
+              >
+                {columns.map((column, index) => (
+                  <td
+                    key={column.key}
+                    className={cn(
+                      'py-3 align-middle',
+                      index === 0 ? 'pr-4 pl-6' : index === columns.length - 1 ? 'pr-6 pl-3' : 'px-3',
+                      column.align === 'right' && 'text-right',
+                      column.className,
+                    )}
+                  >
+                    {column.render(row)}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
       <ul className={cn('divide-y divide-line', breakpoint === 'lg' ? 'lg:hidden' : 'xl:hidden')}>
         {rows.map((row) => (
           <li key={rowKey(row)} className="px-5 py-4 sm:px-6">

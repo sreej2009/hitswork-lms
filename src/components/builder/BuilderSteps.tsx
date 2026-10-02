@@ -218,18 +218,18 @@ export function BasicsStep({ draft, update, showErrors }: { draft: CourseDraft; 
             emptyText="Add a short introduction to help learners understand what this course offers."
           />
           <div className="mt-4 space-y-4">
-            <Field id="promo-title" label="Video Title" optional>
+            <Field id="promo-video-title" label="Video Title" optional>
               <TextInput
-                id="promo-title"
+                id="promo-video-title"
                 value={draft.promoVideo.title}
                 maxLength={80}
                 onChange={(e) => update({ promoVideo: { ...draft.promoVideo, title: e.target.value } })}
                 placeholder="e.g. Welcome to the course"
               />
             </Field>
-            <Field id="promo-description" label="Video Description" optional>
+            <Field id="promo-video-description" label="Video Description" optional>
               <TextArea
-                id="promo-description"
+                id="promo-video-description"
                 rows={2}
                 maxLength={300}
                 value={draft.promoVideo.description}

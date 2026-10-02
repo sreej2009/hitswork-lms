@@ -77,7 +77,7 @@ export function MyLearningPage() {
         />
       ) : (
         <>
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
             <FilterPills
               options={tabs.map((t) => ({ id: t.id, label: `${t.label} (${counts[t.id]})` }))}
               value={tab}
